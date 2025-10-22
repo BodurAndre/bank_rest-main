@@ -4,101 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Регистрация - Bank Cards</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-        .register-container {
-            background: white;
-            padding: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 500px;
-        }
-        .register-header {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-        .register-header h1 {
-            color: #333;
-            margin: 0;
-            font-size: 2rem;
-        }
-        .register-header p {
-            color: #666;
-            margin: 0.5rem 0 0 0;
-        }
-        .form-group {
-            margin-bottom: 1rem;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: #333;
-            font-weight: bold;
-        }
-        .form-group input, .form-group select {
-            width: 100%;
-            padding: 0.75rem;
-            border: 2px solid #ddd;
-            border-radius: 5px;
-            font-size: 1rem;
-            transition: border-color 0.3s;
-            box-sizing: border-box;
-        }
-        .form-group input:focus, .form-group select:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        .form-row {
-            display: flex;
-            gap: 1rem;
-        }
-        .form-row .form-group {
-            flex: 1;
-        }
-        .btn {
-            width: 100%;
-            padding: 0.75rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: transform 0.2s;
-        }
-        .btn:hover {
-            transform: translateY(-2px);
-        }
-        .login-link {
-            text-align: center;
-            margin-top: 1rem;
-        }
-        .login-link a {
-            color: #667eea;
-            text-decoration: none;
-        }
-        .login-link a:hover {
-            text-decoration: underline;
-        }
-        .error {
-            background-color: #ffebee;
-            color: #c62828;
-            padding: 0.75rem;
-            border-radius: 5px;
-            margin-bottom: 1rem;
-            text-align: center;
-        }
-    </style>
+    <link rel="stylesheet" th:href="@{/css/register.css}">
 </head>
 <body>
     <div class="register-container">
@@ -107,7 +13,7 @@
             <p>Регистрация в системе</p>
         </div>
         
-        <form th:action="@{/register}" method="post" th:object="${user}">
+        <form th:action="@{/register}" method="post" th:object="${user}" id="registerForm">
             <div class="form-row">
                 <div class="form-group">
                     <label for="firstName">Имя:</label>
@@ -158,5 +64,7 @@
             <div th:if="${errorMessage}" class="error" th:text="${errorMessage}"></div>
         </form>
     </div>
+    
+    <script th:src="@{/js/auth.js}"></script>
 </body>
 </html>

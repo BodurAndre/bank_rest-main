@@ -4,125 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Главная - Bank Cards</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            margin: 0;
-            padding: 0;
-            min-height: 100vh;
-        }
-        .header {
-            background: white;
-            padding: 1rem 2rem;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .header h1 {
-            color: #333;
-            margin: 0;
-            font-size: 1.5rem;
-        }
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-        .user-info span {
-            color: #666;
-        }
-        .logout-btn {
-            background: #dc3545;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 5px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-block;
-        }
-        .logout-btn:hover {
-            background: #c82333;
-        }
-        .container {
-            max-width: 1200px;
-            margin: 2rem auto;
-            padding: 0 2rem;
-        }
-        .welcome-card {
-            background: white;
-            padding: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-        .welcome-card h2 {
-            color: #333;
-            margin: 0 0 1rem 0;
-            font-size: 2rem;
-        }
-        .welcome-card p {
-            color: #666;
-            margin: 0 0 2rem 0;
-            font-size: 1.1rem;
-        }
-        .features {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            margin-top: 2rem;
-        }
-        .feature-card {
-            background: white;
-            padding: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-        .feature-card h3 {
-            color: #333;
-            margin: 0 0 1rem 0;
-            font-size: 1.5rem;
-        }
-        .feature-card p {
-            color: #666;
-            margin: 0;
-            line-height: 1.6;
-        }
-        .api-info {
-            background: #f8f9fa;
-            padding: 2rem;
-            border-radius: 10px;
-            margin-top: 2rem;
-        }
-        .api-info h3 {
-            color: #333;
-            margin: 0 0 1rem 0;
-        }
-        .api-info p {
-            color: #666;
-            margin: 0 0 1rem 0;
-        }
-        .api-links {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-        .api-link {
-            background: #667eea;
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 5px;
-            text-decoration: none;
-            transition: background 0.3s;
-        }
-        .api-link:hover {
-            background: #5a6fd8;
-        }
-    </style>
+    <link rel="stylesheet" th:href="@{/css/home.css}">
 </head>
 <body>
     <div class="header">
@@ -161,10 +43,10 @@
             <p>Для разработчиков доступна полная документация API с примерами использования:</p>
             <div class="api-links">
                 <a href="/swagger-ui.html" class="api-link">Swagger UI</a>
-                <a href="/v3/api-docs" class="api-link">OpenAPI JSON</a>
-                <a href="/actuator/health" class="api-link">Health Check</a>
             </div>
         </div>
     </div>
+    
+    <script th:src="@{/js/home.js}"></script>
 </body>
 </html>

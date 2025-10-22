@@ -18,7 +18,6 @@ mvn spring-boot:run
 
 ### 3. Проверка работы
 - **Swagger UI**: http://localhost:8081/swagger-ui.html
-- **API Docs**: http://localhost:8081/v3/api-docs
 
 ## 🧪 Тестирование API
 

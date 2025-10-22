@@ -51,7 +51,6 @@ mvn spring-boot:run
 
 ### 3. **Проверка работы**
 - **Swagger UI**: http://localhost:8081/swagger-ui.html
-- **API Docs**: http://localhost:8081/v3/api-docs
 
 ## 🧪 Тестирование JWT API
 
@@ -94,7 +93,6 @@ curl -X POST http://localhost:8081/api/auth/validate \
 | POST | `/api/auth/login` | Вход в систему | ❌ |
 | POST | `/api/auth/validate` | Проверка токена | ❌ |
 | GET | `/swagger-ui.html` | Swagger UI | ❌ |
-| GET | `/v3/api-docs` | OpenAPI документация | ❌ |
 
 **Приложение работает на порту 8081** (как в вашем оригинальном проекте)
 
