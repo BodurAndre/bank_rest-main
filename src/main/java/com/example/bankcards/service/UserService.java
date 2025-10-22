@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -74,5 +75,12 @@ public class UserService {
      */
     public void deleteById(Long id) {
         userRepository.deleteById(id);
+    }
+
+    /**
+     * Поиск пользователей по имени, email или ID
+     */
+    public List<User> searchUsers(String query) {
+        return userRepository.searchUsers(query);
     }
 }

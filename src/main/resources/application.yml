@@ -32,8 +32,6 @@ spring:
           batch_size: 15
         order_inserts: true
         generate_statistics: true
-        hbm2ddl:
-          auto: update
     show-sql: true
     database-platform: org.hibernate.dialect.MySQLDialect
 
@@ -49,8 +47,9 @@ spring:
 
   # Liquibase Configuration
   liquibase:
+    enabled: false
+    contexts: default
     change-log: classpath:db/migration/changelog.xml
-    enabled: true
 
   # Security Configuration
   security:

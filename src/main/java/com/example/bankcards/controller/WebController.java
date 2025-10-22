@@ -30,10 +30,6 @@ public class WebController {
     @Autowired
     private AuthenticationManager authenticationManager;
 
-    @GetMapping("/")
-    public String home() {
-        return "home";
-    }
 
     @GetMapping("/login")
     public String login() {

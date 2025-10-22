@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Переводы - Bank Cards</title>
+    <link rel="stylesheet" th:href="@{/css/transfers.css}">
+</head>
+<body>
+    <div class="header">
+        <h1>💰 Переводы</h1>
+        <div class="header-actions">
+            <a href="/" class="btn btn-primary">🏠 Домой</a>
+            <a href="/cards" class="btn btn-primary">Мои карты</a>
+            <a href="/transfers/history" class="btn btn-secondary">История</a>
+            <a href="/logout" class="btn btn-secondary">Выйти</a>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- Сообщения -->
+        <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+        <div th:if="${errorMessage}" class="alert alert-error" th:text="${errorMessage}"></div>
+        
+        <!-- Форма перевода -->
+        <div class="transfer-form-container">
+            <h2>Перевод между картами</h2>
+            
+            <form th:action="@{/transfers/execute}" method="post" th:object="${transferRequest}" class="transfer-form">
+                <div class="form-group">
+                    <label for="fromCardId">С карты:</label>
+                    <select id="fromCardId" th:field="*{fromCardId}" required>
+                        <option value="">Выберите карту отправителя</option>
+                        <option th:each="card : ${activeCards}" 
+                                th:value="${card.id}" 
+                                th:text="${card.maskedNumber + ' (Баланс: ' + card.balance + ' ₽)'}"></option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="toCardId">На карту:</label>
+                    <select id="toCardId" th:field="*{toCardId}" required>
+                        <option value="">Выберите карту получателя</option>
+                        <option th:each="card : ${activeCards}" 
+                                th:value="${card.id}" 
+                                th:text="${card.maskedNumber + ' (Баланс: ' + card.balance + ' ₽)'}"></option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="amount">Сумма (₽):</label>
+                    <input type="number" id="amount" th:field="*{amount}" 
+                           step="0.01" min="0.01" required 
+                           placeholder="Введите сумму перевода">
+                </div>
+                
+                <div class="form-group">
+                    <label for="description">Описание (необязательно):</label>
+                    <textarea id="description" th:field="*{description}" 
+                              placeholder="Назначение перевода"></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary btn-large">Выполнить перевод</button>
+                    <button type="button" class="btn btn-secondary" onclick="clearForm()">Очистить</button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Активные карты -->
+        <div class="active-cards">
+            <h3>Ваши активные карты</h3>
+            <div th:if="${activeCards.isEmpty()}" class="empty-state">
+                <p>У вас нет активных карт для переводов</p>
+            </div>
+            <div th:else class="cards-grid">
+                <div th:each="card : ${activeCards}" class="card-preview">
+                    <div class="card-number" th:text="${card.maskedNumber}"></div>
+                    <div class="card-balance" th:text="${card.balance} + ' ₽'"></div>
+                    <div class="card-status active">Активна</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Быстрые действия -->
+        <div class="quick-actions">
+            <h3>Быстрые действия</h3>
+            <div class="actions-grid">
+                <a href="/transfers/history" class="action-card">
+                    <div class="action-icon">📊</div>
+                    <div class="action-title">История переводов</div>
+                    <div class="action-description">Просмотр всех операций</div>
+                </a>
+                
+                <a href="/transfers/stats" class="action-card">
+                    <div class="action-icon">📈</div>
+                    <div class="action-title">Статистика</div>
+                    <div class="action-description">Анализ ваших переводов</div>
+                </a>
+                
+                <a href="/cards" class="action-card">
+                    <div class="action-icon">💳</div>
+                    <div class="action-title">Управление картами</div>
+                    <div class="action-description">Просмотр и блокировка карт</div>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <script th:src="@{/js/transfers.js}"></script>
+</body>
+</html>

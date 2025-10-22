@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Создание карты - Bank Cards</title>
+    <link rel="stylesheet" th:href="@{/css/cards.css}">
+</head>
+<body>
+    <div class="header">
+        <h1>💳 Создание карты</h1>
+        <div class="header-actions">
+            <a href="/" class="btn btn-primary">🏠 Домой</a>
+            <a href="/cards/admin" class="btn btn-primary">Все карты</a>
+            <a href="/cards" class="btn btn-secondary">Мои карты</a>
+            <a href="/logout" class="btn btn-secondary">Выйти</a>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- Красивые уведомления -->
+        <div th:if="${successMessage}" class="notification notification-success">
+            <div class="notification-content">
+                <div class="notification-icon">✅</div>
+                <div class="notification-text" th:text="${successMessage}"></div>
+            </div>
+        </div>
+        <div th:if="${errorMessage}" class="notification notification-error">
+            <div class="notification-content">
+                <div class="notification-icon">❌</div>
+                <div class="notification-text" th:text="${errorMessage}"></div>
+            </div>
+        </div>
+        
+        <!-- Форма создания карты в виде карточки -->
+        <div class="create-card-container">
+            <div class="create-card-form">
+                <div class="card-header">
+                    <h2>💳 Создать новую банковскую карту</h2>
+                    <p>Заполните форму для создания новой карты</p>
+                </div>
+                
+                <form th:action="@{/cards/create}" method="post" th:object="${createRequest}" class="card-form">
+                    <div class="form-group">
+                        <label for="userSearch">👤 Поиск пользователя:</label>
+                        <div class="user-search-container">
+                            <input type="text" id="userSearch" placeholder="Введите имя, email или ID пользователя..." 
+                                   class="user-search-input" autocomplete="off">
+                            <div id="userSearchResults" class="user-search-results"></div>
+                        </div>
+                        <input type="hidden" id="ownerEmail" th:field="*{ownerEmail}" required>
+                        <small class="form-help">Начните вводить имя или email пользователя для поиска</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="expiryDate">📅 Срок действия:</label>
+                        <input type="text" id="expiryDate" th:field="*{expiryDate}" 
+                               required placeholder="MM/YY" pattern="^(0[1-9]|1[0-2])/([0-9]{2})$">
+                        <small class="form-help">Формат: MM/YY (например: 12/25)</small>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary btn-large">✨ Создать карту</button>
+                        <a href="/cards/admin" class="btn btn-secondary">❌ Отмена</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Информационный блок -->
+        <div class="info-section">
+            <div class="info-card">
+                <div class="info-header">
+                    <h3>ℹ️ Информация о создании карты</h3>
+                    <p>Что произойдет после создания карты</p>
+                </div>
+                
+                <div class="info-items">
+                    <div class="info-item">
+                        <div class="info-icon">🔢</div>
+                        <div class="info-content">
+                            <h4>Номер карты</h4>
+                            <p>Генерируется автоматически и шифруется</p>
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-icon">💰</div>
+                        <div class="info-content">
+                            <h4>Начальный баланс</h4>
+                            <p>0.00 ₽ - карта создается с нулевым балансом</p>
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-icon">✅</div>
+                        <div class="info-content">
+                            <h4>Статус карты</h4>
+                            <p>Активна - готова к использованию</p>
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-icon">👤</div>
+                        <div class="info-content">
+                            <h4>Привязка к пользователю</h4>
+                            <p>Карта будет привязана к выбранному пользователю</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script th:src="@{/js/cards.js}"></script>
+</body>
+</html>

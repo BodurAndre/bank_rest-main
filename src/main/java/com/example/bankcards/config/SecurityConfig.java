@@ -45,6 +45,10 @@ public class SecurityConfig {
                         .requestMatchers("/login", "/register").permitAll()
                         .requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
                         
+                        // Карты и переводы
+                        .requestMatchers("/cards/**").authenticated()
+                        .requestMatchers("/transfers/**").authenticated()
+                        
                         // Admin endpoints
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         

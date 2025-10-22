@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Пополнение карты - Bank Cards</title>
+    <link rel="stylesheet" th:href="@{/css/cards.css}">
+</head>
+<body>
+    <div class="header">
+        <h1>💰 Пополнение карты</h1>
+        <div class="header-actions">
+            <a href="/" class="btn btn-primary">🏠 Домой</a>
+            <a href="/cards/admin" class="btn btn-primary">Все карты</a>
+            <a href="/cards" class="btn btn-secondary">Мои карты</a>
+            <a href="/logout" class="btn btn-secondary">Выйти</a>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- Красивые уведомления -->
+        <div th:if="${successMessage}" class="notification notification-success">
+            <div class="notification-content">
+                <div class="notification-icon">✅</div>
+                <div class="notification-text" th:text="${successMessage}"></div>
+            </div>
+        </div>
+        <div th:if="${errorMessage}" class="notification notification-error">
+            <div class="notification-content">
+                <div class="notification-icon">❌</div>
+                <div class="notification-text" th:text="${errorMessage}"></div>
+            </div>
+        </div>
+        
+        <!-- Форма пополнения в виде карточки -->
+        <div class="create-card-container">
+            <div class="create-card-form">
+                <div class="card-header">
+                    <h2>💰 Пополнить карту</h2>
+                    <p>Введите сумму для пополнения карты</p>
+                </div>
+                
+                <!-- Информация о карте -->
+                <div class="card-info" th:if="${card}">
+                    <div class="card-preview">
+                        <div class="card-number" th:text="${card.maskedNumber}">**** **** **** 1234</div>
+                        <div class="card-balance">Текущий баланс: <span th:text="${card.balance}">0.00</span> ₽</div>
+                    </div>
+                </div>
+                
+                <form th:action="@{/cards/{id}/topup(id=${card.id})}" method="post" class="card-form">
+                    <div class="form-group">
+                        <label for="amount">💵 Сумма пополнения:</label>
+                        <input type="number" id="amount" name="amount" 
+                               required min="1" max="1000000" step="0.01" 
+                               placeholder="Введите сумму в рублях">
+                        <small class="form-help">Минимальная сумма: 1 ₽, максимальная: 1,000,000 ₽</small>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary btn-large">💰 Пополнить карту</button>
+                        <a th:href="${card?.id != null ? '/cards/admin' : '/cards'}" class="btn btn-secondary">❌ Отмена</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Информационный блок -->
+        <div class="info-section">
+            <div class="info-card">
+                <div class="info-header">
+                    <h3>ℹ️ Информация о пополнении</h3>
+                    <p>Что произойдет после пополнения карты</p>
+                </div>
+                
+                <div class="info-items">
+                    <div class="info-item">
+                        <div class="info-icon">⚡</div>
+                        <div class="info-content">
+                            <h4>Мгновенное пополнение</h4>
+                            <p>Средства поступят на карту сразу после подтверждения</p>
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-icon">🔒</div>
+                        <div class="info-content">
+                            <h4>Безопасность</h4>
+                            <p>Все операции защищены и логируются в системе</p>
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-icon">📊</div>
+                        <div class="info-content">
+                            <h4>Обновление баланса</h4>
+                            <p>Баланс карты обновится автоматически</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script th:src="@{/js/cards.js}"></script>
+</body>
+</html>

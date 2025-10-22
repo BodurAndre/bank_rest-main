@@ -2,23 +2,27 @@
 <databaseChangeLog
         xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="
-            http://www.liquibase.org/xml/ns/dbchangelog
-            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd">
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd">
 
-    <changeSet id="1" author="andrei">
-        <createTable tableName="users">
-            <column name="id" type="BIGINT" autoIncrement="true">
-                <constraints primaryKey="true" nullable="false"/>
-            </column>
-            <column name="username" type="VARCHAR(100)">
-                <constraints unique="true" nullable="false"/>
-            </column>
-            <column name="password" type="VARCHAR(255)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="role" type="VARCHAR(50)" />
-        </createTable>
+    <changeSet id="1" author="system">
+        <sqlFile path="V1__Create_users_table.sql" relativeToChangelogFile="true"/>
+    </changeSet>
+
+    <changeSet id="2" author="system">
+        <sqlFile path="V2__Create_bank_cards_table.sql" relativeToChangelogFile="true"/>
+    </changeSet>
+
+    <changeSet id="3" author="system">
+        <sqlFile path="V3__Create_transfers_table.sql" relativeToChangelogFile="true"/>
+    </changeSet>
+
+    <changeSet id="4" author="system">
+        <sqlFile path="V4__Create_default_users.sql" relativeToChangelogFile="true"/>
+    </changeSet>
+
+    <changeSet id="5" author="system">
+        <sqlFile path="V5__Fix_default_passwords.sql" relativeToChangelogFile="true"/>
     </changeSet>
 
 </databaseChangeLog>
