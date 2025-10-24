@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление пользователями - Bank Cards</title>
+    <link rel="stylesheet" th:href="@{/css/cards.css}">
+</head>
+<body>
+    <div class="header">
+        <h1>👥 Управление пользователями</h1>
+        <div class="header-actions">
+            <a href="/users/create" class="btn btn-primary">➕ Создать пользователя</a>
+            <a href="/" class="btn btn-secondary">🏠 На главную</a>
+            <a href="/logout" class="btn btn-secondary">Выйти</a>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- Статусные уведомления -->
+        <div th:if="${successMessage}" class="status-notification" th:data-message="${successMessage}" data-type="success"></div>
+        <div th:if="${errorMessage}" class="status-notification" th:data-message="${errorMessage}" data-type="error"></div>
+        
+        <!-- Фильтры -->
+        <div class="filters">
+            <form method="get" class="filter-form">
+                <div class="filter-group">
+                    <label for="search">Поиск:</label>
+                    <input type="text" id="search" name="search" th:value="${search}" 
+                           placeholder="Поиск по имени, email или ID..." />
+                </div>
+                
+                <div class="filter-group">
+                    <label for="size">Показать:</label>
+                    <select id="size" name="size">
+                        <option value="5" th:selected="${size == 5}">5</option>
+                        <option value="10" th:selected="${size == 10}">10</option>
+                        <option value="20" th:selected="${size == 20}">20</option>
+                        <option value="50" th:selected="${size == 50}">50</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="sortBy">Сортировка:</label>
+                    <select id="sortBy" name="sortBy">
+                        <option value="id" th:selected="${sortBy == 'id'}">ID</option>
+                        <option value="firstName" th:selected="${sortBy == 'firstName'}">Имя</option>
+                        <option value="lastName" th:selected="${sortBy == 'lastName'}">Фамилия</option>
+                        <option value="email" th:selected="${sortBy == 'email'}">Email</option>
+                        <option value="role" th:selected="${sortBy == 'role'}">Роль</option>
+                        <option value="createdAt" th:selected="${sortBy == 'createdAt'}">Дата создания</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label for="sortDir">Направление:</label>
+                    <select id="sortDir" name="sortDir">
+                        <option value="asc" th:selected="${sortDir == 'asc'}">По возрастанию</option>
+                        <option value="desc" th:selected="${sortDir == 'desc'}">По убыванию</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">🔍 Применить</button>
+                <a href="/users" class="btn btn-secondary">🔄 Сбросить</a>
+            </form>
+        </div>
+        
+        <!-- Список пользователей -->
+        <div class="users-grid">
+            <div th:each="user : ${users}" class="user-card">
+                <div class="user-header">
+                    <div class="user-info">
+                        <h3 th:text="${user.firstName + ' ' + user.lastName}">Имя Фамилия</h3>
+                        <p class="user-email" th:text="${user.email}">email@example.com</p>
+                        <span class="user-role" th:class="'role-' + ${user.role.name().toLowerCase()}" 
+                              th:text="${user.role.name()}">USER</span>
+                    </div>
+                    <div class="user-actions">
+                        <a th:href="@{/users/{id}/edit(id=${user.id})}" class="btn btn-sm btn-primary">✏️ Редактировать</a>
+                        <button type="button" class="btn btn-sm btn-danger delete-user-btn" 
+                                th:data-user-id="${user.id}" 
+                                th:data-user-name="${user.firstName + ' ' + user.lastName}">🗑️ Удалить</button>
+                    </div>
+                </div>
+                
+                <div class="user-details">
+                    <div class="detail-item">
+                        <span class="label">ID:</span>
+                        <span th:text="${user.id}">1</span>
+                    </div>
+                    <div class="detail-item" th:if="${user.country}">
+                        <span class="label">Страна:</span>
+                        <span th:text="${user.country}">Россия</span>
+                    </div>
+                    <div class="detail-item" th:if="${user.gender}">
+                        <span class="label">Пол:</span>
+                        <span th:text="${user.gender == 'Male' ? 'Мужской' : 'Женский'}">Мужской</span>
+                    </div>
+                    <div class="detail-item" th:if="${user.dateOfBirth}">
+                        <span class="label">Дата рождения:</span>
+                        <span th:text="${user.dateOfBirth}">01.01.1990</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">Создан:</span>
+                        <span th:text="${user.getCreatedAt()}">01.01.2024 12:00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Пагинация -->
+        <div th:if="${totalPages > 1}" class="pagination">
+            <div class="pagination-info">
+                <span>Страница <span th:text="${currentPage + 1}">1</span> из <span th:text="${totalPages}">1</span></span>
+                <span>Всего пользователей: <span th:text="${totalElements}">0</span></span>
+            </div>
+            
+            <div class="pagination-controls">
+                <a th:if="${currentPage > 0}" 
+                   th:href="@{/users(page=${currentPage - 1}, size=${size}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search})}" 
+                   class="btn btn-sm">← Предыдущая</a>
+                
+                <span th:each="pageNum : ${#numbers.sequence(0, totalPages - 1)}" 
+                      th:if="${pageNum >= currentPage - 2 and pageNum <= currentPage + 2}">
+                    <a th:if="${pageNum != currentPage}"
+                       th:href="@{/users(page=${pageNum}, size=${size}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search})}" 
+                       class="btn btn-sm" th:text="${pageNum + 1}">1</a>
+                    <span th:if="${pageNum == currentPage}" class="btn btn-sm btn-primary" th:text="${pageNum + 1}">1</span>
+                </span>
+                
+                <a th:if="${currentPage < totalPages - 1}" 
+                   th:href="@{/users(page=${currentPage + 1}, size=${size}, sortBy=${sortBy}, sortDir=${sortDir}, search=${search})}" 
+                   class="btn btn-sm">Следующая →</a>
+            </div>
+        </div>
+    </div>
+
+    <script th:src="@{/js/cards.js}"></script>
+    
+    <script>
+        // Обработка статусных уведомлений
+        document.addEventListener('DOMContentLoaded', function() {
+            const successNotification = document.querySelector('.status-notification[data-type="success"]');
+            const errorNotification = document.querySelector('.status-notification[data-type="error"]');
+            
+            if (successNotification) {
+                const message = successNotification.getAttribute('data-message');
+                showStatusNotification(message, 'success');
+            }
+            
+            if (errorNotification) {
+                const message = errorNotification.getAttribute('data-message');
+                showStatusNotification(message, 'error');
+            }
+            
+            // Инициализация кнопок удаления
+            initializeDeleteButtons();
+        });
+
+        function initializeDeleteButtons() {
+            const deleteButtons = document.querySelectorAll('.delete-user-btn');
+            
+            deleteButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const userId = this.getAttribute('data-user-id');
+                    const userName = this.getAttribute('data-user-name');
+                    deleteUser(userId, userName);
+                });
+            });
+        }
+
+        function deleteUser(userId, userName) {
+            showCustomConfirm(
+                '🗑️ Удаление пользователя',
+                'Вы уверены, что хотите удалить пользователя "' + userName + '"? Это действие необратимо!',
+                'Удалить',
+                'Отмена',
+                () => {
+                    fetch(`/users/${userId}/delete`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        }
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            return response.text();
+                        } else {
+                            throw new Error('Ошибка при удалении пользователя');
+                        }
+                    })
+                    .then(message => {
+                        showCustomNotification('✅ Успех', message, 'success');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    })
+                    .catch(error => {
+                        showCustomNotification('❌ Ошибка', 'Ошибка при удалении пользователя: ' + error.message, 'error');
+                    });
+                }
+            );
+        }
+    </script>
+</body>
+</html>

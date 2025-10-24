@@ -58,6 +58,9 @@ public class SecurityConfig {
                         // Users API endpoints (for user search)
                         .requestMatchers("/api/users/**").hasRole("ADMIN")
                         
+                        // User management pages (admin only)
+                        .requestMatchers("/users/**").hasRole("ADMIN")
+                        
                         // Все остальные запросы требуют аутентификации
                         .anyRequest().authenticated()
                 )

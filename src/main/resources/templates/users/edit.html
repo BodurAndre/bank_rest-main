@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Редактирование пользователя - Bank Cards</title>
+    <link rel="stylesheet" th:href="@{/css/cards.css}">
+</head>
+<body>
+    <div class="header">
+        <h1>✏️ Редактирование пользователя</h1>
+        <div class="header-actions">
+            <a href="/users" class="btn btn-secondary">← Назад к списку</a>
+            <a href="/" class="btn btn-secondary">🏠 На главную</a>
+            <a href="/logout" class="btn btn-secondary">Выйти</a>
+        </div>
+    </div>
+    
+    <div class="container">
+        <!-- Статусные уведомления -->
+        <div th:if="${errorMessage}" class="status-notification" th:data-message="${errorMessage}" data-type="error"></div>
+        
+        <form th:action="@{/users/{id}/edit(id=${user.id})}" method="post" th:object="${user}" class="user-form">
+            <div class="form-section">
+                <h3>👤 Основная информация</h3>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="firstName">Имя *</label>
+                        <input type="text" id="firstName" th:field="*{firstName}" required 
+                               placeholder="Введите имя" />
+                    </div>
+                    <div class="form-group">
+                        <label for="lastName">Фамилия *</label>
+                        <input type="text" id="lastName" th:field="*{lastName}" required 
+                               placeholder="Введите фамилию" />
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">Email *</label>
+                    <input type="email" id="email" th:field="*{email}" required 
+                           placeholder="user@example.com" />
+                </div>
+                
+                <div class="form-group">
+                    <label for="role">Роль *</label>
+                    <select id="role" th:field="*{role}" required>
+                        <option value="USER" th:selected="${user.role.name() == 'USER'}">Пользователь</option>
+                        <option value="ADMIN" th:selected="${user.role.name() == 'ADMIN'}">Администратор</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3>🔐 Смена пароля</h3>
+                <p class="form-help">Оставьте поля пустыми, если не хотите менять пароль</p>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="newPassword">Новый пароль</label>
+                        <input type="password" id="newPassword" name="newPassword" 
+                               minlength="6" placeholder="Минимум 6 символов" />
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Подтверждение пароля</label>
+                        <input type="password" id="confirmPassword" name="confirmPassword" 
+                               placeholder="Повторите пароль" />
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3>📋 Дополнительная информация</h3>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="dateOfBirth">Дата рождения</label>
+                        <input type="date" id="dateOfBirth" th:field="*{dateOfBirth}" />
+                    </div>
+                    <div class="form-group">
+                        <label for="gender">Пол</label>
+                        <select id="gender" th:field="*{gender}">
+                            <option value="">Выберите пол</option>
+                            <option value="Male" th:selected="${user.gender == 'Male'}">Мужской</option>
+                            <option value="Female" th:selected="${user.gender == 'Female'}">Женский</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="country">Страна</label>
+                    <input type="text" id="country" th:field="*{country}" 
+                           placeholder="Россия" />
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">✅ Сохранить изменения</button>
+                <a href="/users" class="btn btn-secondary">❌ Отмена</a>
+            </div>
+        </form>
+    </div>
+
+    <script th:src="@{/js/cards.js}"></script>
+    
+    <script>
+        // Обработка статусных уведомлений
+        document.addEventListener('DOMContentLoaded', function() {
+            const errorNotification = document.querySelector('.status-notification[data-type="error"]');
+            
+            if (errorNotification) {
+                const message = errorNotification.getAttribute('data-message');
+                showStatusNotification(message, 'error');
+            }
+            
+            // Валидация паролей
+            const newPassword = document.getElementById('newPassword');
+            const confirmPassword = document.getElementById('confirmPassword');
+            
+            function validatePasswords() {
+                if (newPassword.value !== '' && confirmPassword.value !== '') {
+                    if (newPassword.value !== confirmPassword.value) {
+                        confirmPassword.setCustomValidity('Пароли не совпадают');
+                    } else {
+                        confirmPassword.setCustomValidity('');
+                    }
+                } else if (newPassword.value !== '' && confirmPassword.value === '') {
+                    confirmPassword.setCustomValidity('Подтвердите пароль');
+                } else {
+                    confirmPassword.setCustomValidity('');
+                }
+            }
+            
+            newPassword.addEventListener('input', validatePasswords);
+            confirmPassword.addEventListener('input', validatePasswords);
+        });
+    </script>
+</body>
+</html>
