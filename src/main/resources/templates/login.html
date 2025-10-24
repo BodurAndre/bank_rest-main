@@ -26,10 +26,6 @@
             
             <button type="submit" class="btn">Войти</button>
             
-            <div class="register-link">
-                <a href="/register">Нет аккаунта? Зарегистрироваться</a>
-            </div>
-            
             <p th:if="${param.error}" class="error">Неверный email или пароль</p>
             <p th:if="${param.logout}" class="success">Вы успешно вышли из системы</p>
         </form>

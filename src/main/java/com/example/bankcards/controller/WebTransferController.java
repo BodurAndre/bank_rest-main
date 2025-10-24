@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -38,9 +39,10 @@ public class WebTransferController {
     private UserService userService;
 
     /**
-     * Страница переводов
+     * Страница переводов (только для пользователей)
      */
     @GetMapping
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public String transfersPage(Authentication authentication, Model model) {
         String username = authentication.getName();
         User currentUser = userService.findByEmail(username).orElseThrow(() -> new RuntimeException("Пользователь не найден"));
@@ -55,9 +57,10 @@ public class WebTransferController {
     }
 
     /**
-     * Выполнение перевода
+     * Выполнение перевода (только для пользователей)
      */
     @PostMapping("/execute")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public String executeTransfer(
             @ModelAttribute("transferRequest") TransferRequest request,
             Authentication authentication,
@@ -78,9 +81,10 @@ public class WebTransferController {
     }
 
     /**
-     * История переводов
+     * История переводов (только для пользователей)
      */
     @GetMapping("/history")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public String transferHistory(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,

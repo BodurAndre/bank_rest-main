@@ -6,11 +6,13 @@ import com.example.bankcards.entity.BankCard;
 import com.example.bankcards.entity.User;
 import com.example.bankcards.service.BankCardService;
 import com.example.bankcards.service.UserService;
+import com.example.bankcards.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -32,6 +34,9 @@ public class WebBankCardController {
 
     @Autowired
     private UserService userService;
+    
+    @Autowired
+    private NotificationService notificationService;
 
     /**
      * Страница со списком карт пользователя
@@ -65,6 +70,7 @@ public class WebBankCardController {
         model.addAttribute("totalPages", cards.getTotalPages());
         model.addAttribute("currentStatus", status);
         model.addAttribute("currentSearch", search);
+        model.addAttribute("isAdmin", currentUser.getRole() == User.Role.ADMIN);
         
         return "cards/list";
     }
@@ -73,15 +79,17 @@ public class WebBankCardController {
      * Страница создания новой карты (только для админа)
      */
     @GetMapping("/create")
+    @PreAuthorize("hasRole('ADMIN')")
     public String createCardForm(Model model) {
         model.addAttribute("createRequest", new CreateBankCardRequest());
         return "cards/create";
     }
 
     /**
-     * Обработка создания карты
+     * Обработка создания карты (только для админа)
      */
     @PostMapping("/create")
+    @PreAuthorize("hasRole('ADMIN')")
     public String createCard(
             @ModelAttribute("createRequest") CreateBankCardRequest request,
             RedirectAttributes redirectAttributes) {
@@ -117,9 +125,10 @@ public class WebBankCardController {
     }
 
     /**
-     * Блокировка карты
+     * Блокировка карты (только для админа)
      */
     @PostMapping("/{id}/block")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> blockCard(
             @PathVariable Long id,
             @RequestParam String reason,
@@ -146,6 +155,7 @@ public class WebBankCardController {
      * Активация карты (только для админа)
      */
     @PostMapping("/{id}/activate")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> activateCard(
             @PathVariable Long id,
             Authentication authentication) {
@@ -171,6 +181,7 @@ public class WebBankCardController {
      * Удаление карты (только для админа)
      */
     @PostMapping("/{id}/delete")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> deleteCard(
             @PathVariable Long id,
             Authentication authentication) {
@@ -196,6 +207,7 @@ public class WebBankCardController {
      * Страница всех карт (только для админа)
      */
     @GetMapping("/admin")
+    @PreAuthorize("hasRole('ADMIN')")
     public String allCards(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -235,9 +247,10 @@ public class WebBankCardController {
     }
 
     /**
-     * Страница пополнения карты
+     * Страница пополнения карты (только для админа)
      */
     @GetMapping("/{id}/topup")
+    @PreAuthorize("hasRole('ADMIN')")
     public String topupCardForm(@PathVariable Long id, Authentication authentication, Model model) {
         String username = authentication.getName();
         User currentUser = userService.findByEmail(username).orElseThrow(() -> new RuntimeException("Пользователь не найден"));
@@ -255,9 +268,10 @@ public class WebBankCardController {
     }
 
     /**
-     * Обработка пополнения карты (AJAX)
+     * Обработка пополнения карты (AJAX) (только для админа)
      */
     @PostMapping("/{id}/topup")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> topupCard(
             @PathVariable Long id,
             @RequestParam Double amount,
@@ -275,6 +289,145 @@ public class WebBankCardController {
             return ResponseEntity.ok("Карта успешно пополнена на " + amount + " ₽");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Ошибка при пополнении: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Запрос на блокировку карты (для пользователей)
+     */
+    @PostMapping("/{id}/request-block")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<?> requestCardBlock(
+            @PathVariable Long id,
+            @RequestParam String reason,
+            Authentication authentication) {
+        
+        String username = authentication.getName();
+        User currentUser = userService.findByEmail(username)
+            .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+        
+        try {
+            // Проверяем, что пользователь может управлять этой картой
+            if (!bankCardService.canUserManageCard(currentUser, id)) {
+                return ResponseEntity.status(403).body("Нет доступа к карте");
+            }
+            
+            // Получаем карту через сервис
+            BankCardDto cardDto = bankCardService.findById(id)
+                .orElseThrow(() -> new RuntimeException("Карта не найдена"));
+            
+            // Получаем сущность карты для уведомления
+            BankCard card = bankCardService.getCardEntityById(id)
+                .orElseThrow(() -> new RuntimeException("Карта не найдена"));
+            
+            // Создаем уведомление для админов
+            notificationService.createCardBlockRequest(currentUser, card, reason);
+            
+            // Устанавливаем флаг, что запрос на блокировку отправлен
+            card.setBlockRequestSent(true);
+            bankCardService.saveCard(card);
+            
+            return ResponseEntity.ok("✅ Запрос на блокировку карты отправлен администраторам");
+            
+        } catch (Exception e) {
+            System.err.println("Error requesting card block: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("❌ Ошибка при отправке запроса: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Запрос на пополнение карты (для пользователей)
+     */
+    @PostMapping("/{id}/request-topup")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<?> requestCardTopup(
+            @PathVariable Long id,
+            @RequestParam Double amount,
+            Authentication authentication) {
+        
+        String username = authentication.getName();
+        User currentUser = userService.findByEmail(username)
+            .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+        
+        try {
+            // Проверяем, что пользователь может управлять этой картой
+            if (!bankCardService.canUserManageCard(currentUser, id)) {
+                return ResponseEntity.status(403).body("Нет доступа к карте");
+            }
+            
+            // Получаем карту через сервис
+            BankCardDto cardDto = bankCardService.findById(id)
+                .orElseThrow(() -> new RuntimeException("Карта не найдена"));
+            
+            // Проверяем, что карта не заблокирована
+            if (cardDto.getStatus() == BankCard.Status.BLOCKED) {
+                return ResponseEntity.badRequest().body("❌ Карта заблокирована, пополнение невозможно");
+            }
+            
+            // Проверяем, что не был отправлен запрос на блокировку
+            if (cardDto.getBlockRequestSent() != null && cardDto.getBlockRequestSent()) {
+                return ResponseEntity.badRequest().body("❌ По карте отправлен запрос на блокировку, пополнение невозможно");
+            }
+            
+            // Получаем сущность карты для уведомления
+            BankCard card = bankCardService.getCardEntityById(id)
+                .orElseThrow(() -> new RuntimeException("Карта не найдена"));
+            
+            // Создаем уведомление для админов
+            notificationService.createCardTopupRequest(currentUser, card, amount);
+            
+            return ResponseEntity.ok("✅ Запрос на пополнение карты отправлен администраторам");
+            
+        } catch (Exception e) {
+            System.err.println("Error requesting card topup: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("❌ Ошибка при отправке запроса: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Запрос на разблокировку карты (для пользователей)
+     */
+    @PostMapping("/{id}/request-unblock")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<?> requestCardUnblock(
+            @PathVariable Long id,
+            @RequestParam String reason,
+            Authentication authentication) {
+        
+        String username = authentication.getName();
+        User currentUser = userService.findByEmail(username)
+            .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+        
+        try {
+            // Проверяем, что пользователь может управлять этой картой
+            if (!bankCardService.canUserManageCard(currentUser, id)) {
+                return ResponseEntity.status(403).body("Нет доступа к карте");
+            }
+            
+            // Получаем карту через сервис
+            BankCardDto cardDto = bankCardService.findById(id)
+                .orElseThrow(() -> new RuntimeException("Карта не найдена"));
+            
+            // Проверяем, что карта заблокирована
+            if (cardDto.getStatus() != BankCard.Status.BLOCKED) {
+                return ResponseEntity.badRequest().body("❌ Карта не заблокирована, разблокировка не требуется");
+            }
+            
+            // Получаем сущность карты для уведомления
+            BankCard card = bankCardService.getCardEntityById(id)
+                .orElseThrow(() -> new RuntimeException("Карта не найдена"));
+            
+            // Создаем уведомление для админов
+            notificationService.createCardUnblockRequest(currentUser, card, reason);
+            
+            return ResponseEntity.ok("✅ Запрос на разблокировку карты отправлен администраторам");
+            
+        } catch (Exception e) {
+            System.err.println("Error requesting card unblock: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("❌ Ошибка при отправке запроса: " + e.getMessage());
         }
     }
 }

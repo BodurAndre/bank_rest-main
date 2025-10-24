@@ -243,4 +243,19 @@ public class BankCardService {
         
         bankCardRepository.save(card);
     }
+    
+    /**
+     * Получение сущности карты по ID
+     */
+    public Optional<BankCard> getCardEntityById(Long id) {
+        return bankCardRepository.findById(id);
+    }
+    
+    /**
+     * Сохранение карты
+     */
+    @Transactional
+    public BankCard saveCard(BankCard card) {
+        return bankCardRepository.save(card);
+    }
 }

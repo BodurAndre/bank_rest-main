@@ -42,6 +42,9 @@ public class BankCard {
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private Status status = Status.ACTIVE;
+    
+    @Column(name = "block_request_sent")
+    private Boolean blockRequestSent = false;
 
     @Column(name = "balance", nullable = false, precision = 19, scale = 2)
     private BigDecimal balance = BigDecimal.ZERO;
@@ -127,5 +130,13 @@ public class BankCard {
         this.expiryDate = expiryDate;
         this.status = Status.ACTIVE;
         this.balance = BigDecimal.ZERO;
+    }
+    
+    public Boolean getBlockRequestSent() {
+        return blockRequestSent;
+    }
+    
+    public void setBlockRequestSent(Boolean blockRequestSent) {
+        this.blockRequestSent = blockRequestSent;
     }
 }

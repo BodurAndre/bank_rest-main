@@ -2,6 +2,7 @@ package com.example.bankcards.controller;
 
 import com.example.bankcards.entity.User;
 import com.example.bankcards.service.UserService;
+import com.example.bankcards.service.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -16,6 +17,9 @@ public class HomeController {
 
     @Autowired
     private UserService userService;
+    
+    @Autowired
+    private NotificationService notificationService;
 
     @GetMapping("/")
     public String home(Authentication authentication, Model model) {
@@ -27,6 +31,10 @@ public class HomeController {
                 model.addAttribute("user", user);
                 boolean isAdmin = user.getRole().equals(User.Role.ADMIN);
                 model.addAttribute("isAdmin", isAdmin);
+                
+                // Добавляем счетчик непрочитанных уведомлений
+                Long unreadCount = notificationService.getUnreadCount(user);
+                model.addAttribute("unreadNotifications", unreadCount);
             }
         } else {
             model.addAttribute("isAdmin", false);

@@ -42,12 +42,18 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html").permitAll()
                         
                         // Веб-страницы
-                        .requestMatchers("/login", "/register").permitAll()
+                        .requestMatchers("/login").permitAll()
                         .requestMatchers("/css/**", "/js/**", "/images/**").permitAll()
                         
-                        // Карты и переводы
-                        .requestMatchers("/cards/**").authenticated()
-                        .requestMatchers("/transfers/**").authenticated()
+                        // Карты - общий доступ для аутентифицированных пользователей
+                        .requestMatchers("/cards").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/cards/{id}").hasAnyRole("USER", "ADMIN")
+                        
+                        // Переводы - только для пользователей
+                        .requestMatchers("/transfers/**").hasAnyRole("USER", "ADMIN")
+                        
+                        // Уведомления - только для админов
+                        .requestMatchers("/notifications/**").hasRole("ADMIN")
                         
                         // Admin endpoints
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

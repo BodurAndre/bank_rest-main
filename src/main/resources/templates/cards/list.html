@@ -75,10 +75,17 @@
                 </div>
                 
                 <div class="card-actions">
-                    <button class="btn btn-sm btn-success topup-btn" 
+                    <button th:if="${card.status.name() == 'ACTIVE' && (card.blockRequestSent == null || !card.blockRequestSent)}" 
+                            type="button" class="btn btn-sm btn-primary request-topup-btn" 
                             th:data-card-id="${card.id}" 
                             th:data-card-number="${card.maskedNumber}" 
-                            th:data-card-balance="${card.balance}">💰 Пополнить</button>
+                            th:data-card-balance="${card.balance}">💰 Запросить пополнение</button>
+                    <button th:if="${card.status.name() == 'BLOCKED'}" 
+                            type="button" class="btn btn-sm btn-secondary" 
+                            disabled>Карта заблокирована</button>
+                    <button th:if="${card.status.name() == 'ACTIVE' && card.blockRequestSent != null && card.blockRequestSent}" 
+                            type="button" class="btn btn-sm btn-secondary" 
+                            disabled>Запрос на блокировку отправлен</button>
                     
                     <!-- Скрытые поля для отладки -->
                     <div class="hidden-card-data" style="display: none;">
@@ -88,15 +95,19 @@
                     </div>
                     
                     <div th:if="${card.status.name() == 'ACTIVE'}" class="action-group">
-                        <button type="button" class="btn btn-sm btn-warning block-btn" 
-                                th:data-card-id="${card.id}"
-                                th:data-reason="'Блокировка пользователем'">Заблокировать</button>
+                        <button th:if="${!card.blockRequestSent}" 
+                                type="button" class="btn btn-sm btn-warning request-block-btn" 
+                                th:data-card-id="${card.id}">Запросить блокировку</button>
+                        <button th:if="${card.blockRequestSent}" 
+                                type="button" class="btn btn-sm btn-secondary" 
+                                disabled>Запрос на блокировку отправлен</button>
                     </div>
                     
                     <div th:if="${card.status.name() == 'BLOCKED'}" class="action-group">
-                        <button type="button" class="btn btn-sm btn-success activate-btn" 
-                                th:data-card-id="${card.id}"
-                                th:if="${#authentication.principal.role.name() == 'ADMIN'}">Активировать</button>
+                        <button th:if="${isAdmin}" type="button" class="btn btn-sm btn-success activate-btn" 
+                                th:data-card-id="${card.id}">Активировать</button>
+                        <button th:if="${!isAdmin}" type="button" class="btn btn-sm btn-primary request-unblock-btn" 
+                                th:data-card-id="${card.id}">Запросить разблокировку</button>
                     </div>
                 </div>
             </div>
@@ -159,6 +170,9 @@
 
     <script th:src="@{/js/cards.js}"></script>
     <script th:src="@{/js/card-actions.js}"></script>
+    <script th:src="@{/js/notification-actions.js}"></script>
+    <script th:src="@{/js/topup-request.js}"></script>
+    <script th:src="@{/js/unblock-request.js}"></script>
     
     <script>
         // Обработка статусных уведомлений

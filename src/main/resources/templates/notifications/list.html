@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Уведомления - Bank Cards</title>
+    <link rel="stylesheet" th:href="@{/css/cards.css}">
+    <style>
+        .notification-item {
+            background: #ffffff !important;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .notification-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .notification-item.unread {
+            border-left: 4px solid #007bff;
+            background: rgba(0, 123, 255, 0.05);
+        }
+        
+        .notification-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .notification-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333 !important;
+            margin: 0;
+        }
+        
+        .notification-type {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+        
+        .notification-type.CARD_BLOCK_REQUEST {
+            background: #ffc107;
+            color: #000;
+        }
+        
+        .notification-type.CARD_TOPUP_REQUEST {
+            background: #17a2b8;
+            color: #fff;
+        }
+        
+        .notification-type.CARD_ACTIVATED {
+            background: #28a745;
+            color: #fff;
+        }
+        
+        .notification-type.CARD_BLOCKED {
+            background: #dc3545;
+            color: #fff;
+        }
+        
+        .notification-type.TRANSFER_COMPLETED {
+            background: #6f42c1;
+            color: #fff;
+        }
+        
+        .notification-message {
+            color: #333 !important;
+            line-height: 1.6;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+        
+        .notification-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9rem;
+            color: #888;
+        }
+        
+        .notification-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .notification-actions .btn {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+        
+        .badge {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+        
+        .badge-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .unread-badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .notifications-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        
+        .notifications-stats {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+        
+        .stats-item {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .stats-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #007bff;
+        }
+        
+        .stats-label {
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .empty-notifications {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+        
+        .empty-notifications .icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔔 Уведомления</h1>
+        <div class="header-actions">
+            <a href="/" class="btn btn-secondary">На главную</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <div th:if="${successMessage}" class="status-notification" th:data-message="${successMessage}" data-type="success"></div>
+        <div th:if="${errorMessage}" class="status-notification" th:data-message="${errorMessage}" data-type="error"></div>
+
+        <!-- Фильтры и поиск -->
+        <div class="filters">
+            <form method="get" class="filter-form">
+                <div class="filter-group">
+                    <label for="search">Поиск:</label>
+                    <input type="text" id="search" name="search" th:value="${search}" placeholder="Поиск по заголовку или сообщению">
+                </div>
+                <div class="filter-group">
+                    <label for="status">Статус:</label>
+                    <select id="status" name="status">
+                        <option value="">Все</option>
+                        <option value="unprocessed" th:selected="${status == 'unprocessed'}">Активные</option>
+                        <option value="processed" th:selected="${status == 'processed'}">Обработанные</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="size">Показывать:</label>
+                    <select id="size" name="size">
+                        <option value="10" th:selected="${size == 10}">10</option>
+                        <option value="20" th:selected="${size == 20}">20</option>
+                        <option value="50" th:selected="${size == 50}">50</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Применить</button>
+                <a th:href="@{/notifications}" class="btn btn-secondary">Сбросить</a>
+            </form>
+        </div>
+
+        <!-- Статистика уведомлений -->
+        <div class="notifications-header">
+            <div class="notifications-stats">
+                <div class="stats-item">
+                    <div class="stats-number" th:text="${totalElements}">0</div>
+                    <div class="stats-label">Всего</div>
+                </div>
+                <div class="stats-item">
+                    <div class="stats-number" th:text="${unreadCount}">0</div>
+                    <div class="stats-label">Непрочитанных</div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <form th:action="@{/notifications/mark-all-read}" method="post" style="display: inline;">
+                    <button type="submit" class="btn btn-primary">Отметить все как прочитанные</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Список уведомлений -->
+        <div th:if="${notifications != null and !notifications.empty}">
+            <div th:each="notification : ${notifications}" 
+                 class="notification-item" 
+                 th:classappend="${!notification.isRead} ? 'unread' : ''">
+                
+                <div th:if="${!notification.isRead}" class="unread-badge">!</div>
+                
+                <div class="notification-header">
+                    <h3 class="notification-title" th:text="${notification.title}">Заголовок уведомления</h3>
+                    <div class="notification-status">
+                        <span class="notification-type" 
+                              th:classappend="'notification-type.' + ${notification.type}" 
+                              th:text="${notification.type.description}">Тип</span>
+                        <span class="status-badge" 
+                              th:classappend="${notification.isProcessed} ? 'status-processed' : 'status-active'"
+                              th:text="${notification.isProcessed} ? 'Обработано' : 'Активно'">Статус</span>
+                    </div>
+                </div>
+                
+                <div class="notification-message" th:text="${notification.message}">
+                    Текст уведомления
+                </div>
+                
+                <div class="notification-meta">
+                    <span th:text="${notification.createdAt}">
+                        01.01.2024 12:00
+                    </span>
+                    <div class="notification-actions">
+                        <button th:if="${!notification.isProcessed}" 
+                                type="button" class="btn btn-sm btn-success details-btn" 
+                                th:data-notification-id="${notification.id}"
+                                th:data-card-id="${notification.card.id}"
+                                th:data-user-name="${notification.user.firstName + ' ' + notification.user.lastName}"
+                                th:data-card-number="${notification.card.maskedNumber}"
+                                th:data-reason="${notification.message}"
+                                th:data-amount="${notification.amount}"
+                                th:data-notification-type="${notification.type}">Подробнее</button>
+                        <span th:if="${notification.isProcessed}" class="badge badge-secondary">Обработано</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Пустое состояние -->
+        <div th:if="${notifications == null or notifications.empty}" class="empty-notifications">
+            <div class="icon">🔔</div>
+            <h3>Нет уведомлений</h3>
+            <p>У вас пока нет уведомлений</p>
+        </div>
+
+        <!-- Пагинация -->
+        <div class="pagination" th:if="${totalPages > 1}">
+            <a th:if="${currentPage > 0}" 
+               th:href="@{/notifications(page=${currentPage - 1}, size=${size})}" 
+               class="btn btn-secondary">Предыдущая</a>
+            
+            <span th:each="i : ${#numbers.sequence(0, totalPages - 1)}">
+                <a th:href="@{/notifications(page=${i}, size=${size})}"
+                   th:classappend="${i == currentPage ? 'active' : ''}"
+                   class="btn btn-secondary" 
+                   th:text="${i + 1}">1</a>
+            </span>
+            
+            <a th:if="${currentPage < totalPages - 1}" 
+               th:href="@{/notifications(page=${currentPage + 1}, size=${size})}" 
+               class="btn btn-secondary">Следующая</a>
+        </div>
+    </div>
+
+    <script th:src="@{/js/cards.js}"></script>
+    <script th:src="@{/js/notification-details.js}"></script>
+    <script>
+        // Обработка статусных уведомлений
+        document.addEventListener('DOMContentLoaded', function() {
+            const successNotification = document.querySelector('.status-notification[data-type="success"]');
+            const errorNotification = document.querySelector('.status-notification[data-type="error"]');
+
+            if (successNotification) {
+                const message = successNotification.getAttribute('data-message');
+                showStatusNotification(message, 'success');
+            }
+
+            if (errorNotification) {
+                const message = errorNotification.getAttribute('data-message');
+                showStatusNotification(message, 'error');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -28,6 +28,7 @@ public class BankCardDto {
     private LocalDateTime updatedAt;
     private LocalDateTime blockedAt;
     private String blockReason;
+    private Boolean blockRequestSent;
     private boolean isExpired;
     private boolean canBeUsed;
 
@@ -47,6 +48,7 @@ public class BankCardDto {
         dto.setUpdatedAt(bankCard.getUpdatedAt());
         dto.setBlockedAt(bankCard.getBlockedAt());
         dto.setBlockReason(bankCard.getBlockReason());
+        dto.setBlockRequestSent(bankCard.getBlockRequestSent());
         dto.setExpired(bankCard.isExpired());
         dto.setCanBeUsed(bankCard.canBeUsed());
         return dto;

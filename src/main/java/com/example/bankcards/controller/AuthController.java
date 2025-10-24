@@ -66,49 +66,6 @@ public class AuthController {
         }
     }
 
-    @PostMapping("/register")
-    @Operation(summary = "Регистрация пользователя", description = "Создание нового пользователя и автоматический вход")
-    public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest registerRequest) {
-        try {
-            if (userService.existsByEmail(registerRequest.getEmail())) {
-                Map<String, String> error = new HashMap<>();
-                error.put("error", "Пользователь с таким email уже существует");
-                return ResponseEntity.badRequest().body(error);
-            }
-
-            User user = new User(
-                    registerRequest.getEmail(),
-                    registerRequest.getPassword(),
-                    registerRequest.getFirstName(),
-                    registerRequest.getLastName(),
-                    registerRequest.getDateOfBirth(),
-                    registerRequest.getCountry(),
-                    registerRequest.getGender()
-            );
-
-            User createdUser = userService.createUser(user);
-            
-            // Автоматическая аутентификация после регистрации
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(registerRequest.getEmail(), registerRequest.getPassword())
-            );
-
-            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-            String jwt = jwtUtils.generateToken(userDetails);
-
-            return ResponseEntity.ok(new AuthResponse(
-                    jwt,
-                    createdUser.getEmail(),
-                    createdUser.getRole().name(),
-                    createdUser.getFirstName(),
-                    createdUser.getLastName()
-            ));
-        } catch (Exception e) {
-            Map<String, String> error = new HashMap<>();
-            error.put("error", "Ошибка при создании пользователя: " + e.getMessage());
-            return ResponseEntity.badRequest().body(error);
-        }
-    }
 
     @PostMapping("/validate")
     @Operation(summary = "Валидация токена", description = "Проверка валидности JWT токена")
