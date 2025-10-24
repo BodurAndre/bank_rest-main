@@ -114,17 +114,50 @@ public class BankCardService {
     /**
      * Активирует карту
      */
+    @Transactional
     public BankCardDto activateCard(Long cardId) {
-        BankCard card = bankCardRepository.findById(cardId)
-                .orElseThrow(() -> new IllegalArgumentException("Карта не найдена"));
+        try {
+            BankCard card = bankCardRepository.findById(cardId)
+                    .orElseThrow(() -> new IllegalArgumentException("Карта не найдена"));
 
-        if (card.getStatus() == BankCard.Status.ACTIVE) {
-            throw new IllegalArgumentException("Карта уже активна");
+            if (card.getStatus() == BankCard.Status.ACTIVE) {
+                throw new IllegalArgumentException("Карта уже активна");
+            }
+
+            card.activate();
+            BankCard savedCard = bankCardRepository.save(card);
+            
+            // Принудительно загружаем owner для избежания lazy loading проблем
+            savedCard.getOwner().getEmail();
+            
+            return BankCardDto.fromEntity(savedCard);
+        } catch (Exception e) {
+            System.err.println("Error in activateCard service: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
         }
+    }
+    
+    /**
+     * Простая активация карты без возврата DTO
+     */
+    @Transactional
+    public void activateCardSimple(Long cardId) {
+        try {
+            BankCard card = bankCardRepository.findById(cardId)
+                    .orElseThrow(() -> new IllegalArgumentException("Карта не найдена"));
 
-        card.activate();
-        BankCard savedCard = bankCardRepository.save(card);
-        return BankCardDto.fromEntity(savedCard);
+            if (card.getStatus() == BankCard.Status.ACTIVE) {
+                throw new IllegalArgumentException("Карта уже активна");
+            }
+
+            card.activate();
+            bankCardRepository.save(card);
+        } catch (Exception e) {
+            System.err.println("Error in activateCardSimple service: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     /**

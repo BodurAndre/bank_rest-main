@@ -83,4 +83,12 @@ public class WebController {
         securityContext.setAuthentication(null);
         return "redirect:/login";
     }
+    
+    /**
+     * Обработка ошибок
+     */
+    @GetMapping("/error")
+    public String error() {
+        return "error";
+    }
 }

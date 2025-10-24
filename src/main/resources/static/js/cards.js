@@ -3,6 +3,9 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Инициализация страницы карт
     initializeCardsPage();
+    
+    // Инициализация кнопок пополнения
+    initializeTopupButtons();
 });
 
 function initializeCardsPage() {
@@ -120,6 +123,59 @@ function initializePagination() {
         link.addEventListener('click', function(e) {
             // Добавляем индикатор загрузки
             showLoadingIndicator();
+        });
+    });
+}
+
+function initializeTopupButtons() {
+    const topupButtons = document.querySelectorAll('.topup-btn');
+    
+    topupButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            let cardId = this.getAttribute('data-card-id');
+            let cardNumber = this.getAttribute('data-card-number');
+            let cardBalanceStr = this.getAttribute('data-card-balance');
+            
+            console.log('Raw attributes:', {
+                cardId: cardId,
+                cardNumber: cardNumber,
+                cardBalanceStr: cardBalanceStr
+            });
+            
+            // Если data-атрибуты не работают, используем скрытые поля
+            if (!cardId || cardId.includes('${') || !cardNumber || cardNumber.includes('${')) {
+                console.log('Trying fallback method with hidden fields...');
+                const hiddenData = this.closest('.card-item').querySelector('.hidden-card-data');
+                if (hiddenData) {
+                    cardId = hiddenData.querySelector('.card-id')?.textContent;
+                    cardNumber = hiddenData.querySelector('.card-number')?.textContent;
+                    cardBalanceStr = hiddenData.querySelector('.card-balance')?.textContent;
+                    
+                    console.log('Fallback data:', {
+                        cardId: cardId,
+                        cardNumber: cardNumber,
+                        cardBalanceStr: cardBalanceStr
+                    });
+                }
+            }
+            
+            // Проверяем, что данные загружены правильно
+            if (!cardId || !cardNumber) {
+                console.error('Card data not loaded properly');
+                alert('Ошибка загрузки данных карты. Попробуйте обновить страницу.');
+                return;
+            }
+            
+            const cardBalance = parseFloat(cardBalanceStr);
+            
+            if (isNaN(cardBalance)) {
+                console.error('Invalid balance:', cardBalanceStr);
+                alert('Ошибка: некорректный баланс карты');
+                return;
+            }
+            
+            console.log('Topup button clicked:', cardId, cardNumber, cardBalance);
+            openTopupModal(cardId, cardNumber, cardBalance);
         });
     });
 }
@@ -261,14 +317,23 @@ function initializeUserSearch() {
     });
     
     function searchUsers(query) {
+        console.log('Searching users with query:', query);
         fetch(`/api/users/search?q=${encodeURIComponent(query)}`)
-            .then(response => response.json())
+            .then(response => {
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(users => {
+                console.log('Found users:', users);
                 displaySearchResults(users);
             })
             .catch(error => {
                 console.error('Search error:', error);
-                hideSearchResults();
+                userSearchResults.innerHTML = '<div class="user-search-result">Ошибка при поиске пользователей: ' + error.message + '</div>';
+                userSearchResults.style.display = 'block';
             });
     }
     
@@ -754,22 +819,51 @@ setTimeout(() => {
 
 // Topup Modal Functions
 function openTopupModal(cardId, cardNumber, currentBalance) {
+    console.log('Opening topup modal for card:', cardId, cardNumber, currentBalance);
+    
+    // Преобразуем параметры в правильные типы
+    const cardIdNum = parseInt(cardId);
+    const balanceNum = parseFloat(currentBalance);
+    
     const modal = document.getElementById('topupModal');
     const cardNumberElement = document.getElementById('topupCardNumber');
     const balanceElement = document.getElementById('topupCurrentBalance');
     const form = document.getElementById('topupForm');
     
+    if (!modal) {
+        console.error('Modal element not found!');
+        return;
+    }
+    
+    if (!cardNumberElement) {
+        console.error('Card number element not found!');
+        return;
+    }
+    
+    if (!balanceElement) {
+        console.error('Balance element not found!');
+        return;
+    }
+    
+    if (!form) {
+        console.error('Form element not found!');
+        return;
+    }
+    
     // Заполняем данные карты
     cardNumberElement.textContent = cardNumber;
-    balanceElement.textContent = currentBalance.toFixed(2);
+    balanceElement.textContent = balanceNum.toFixed(2);
     
     // Очищаем форму
     form.reset();
     
     // Показываем модальное окно
-    modal.classList.add('show');
+    console.log('Showing modal...');
     modal.style.display = 'flex';
-    modal.style.animation = 'fadeIn 0.3s ease-out';
+    // Небольшая задержка для правильного отображения
+    setTimeout(() => {
+        modal.classList.add('show');
+    }, 10);
     
     // Обработчик отправки формы
     form.onsubmit = function(e) {
@@ -789,7 +883,7 @@ function openTopupModal(cardId, cardNumber, currentBalance) {
             'Отмена',
             () => {
                 // Отправляем AJAX запрос
-                fetch(`/cards/${cardId}/topup`, {
+                fetch(`/cards/${cardIdNum}/topup`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
@@ -815,12 +909,14 @@ function openTopupModal(cardId, cardNumber, currentBalance) {
 }
 
 function closeTopupModal() {
+    console.log('Closing topup modal...');
     const modal = document.getElementById('topupModal');
-    modal.style.animation = 'fadeOut 0.3s ease-out';
-    setTimeout(() => {
-        modal.style.display = 'none';
+    if (modal) {
         modal.classList.remove('show');
-    }, 300);
+        setTimeout(() => {
+            modal.style.display = 'none';
+        }, 300);
+    }
 }
 
 // Закрытие модального окна при клике вне его

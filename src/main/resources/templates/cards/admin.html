@@ -18,8 +18,8 @@
     
     <div class="container">
         <!-- Статусные уведомления -->
-        <div th:if="${successMessage}" th:onclick="'showStatusNotification(\'' + ${successMessage} + '\', \'success\')'"></div>
-        <div th:if="${errorMessage}" th:onclick="'showStatusNotification(\'' + ${errorMessage} + '\', \'error\')'"></div>
+        <div th:if="${successMessage}" class="status-notification" th:data-message="${successMessage}" data-type="success"></div>
+        <div th:if="${errorMessage}" class="status-notification" th:data-message="${errorMessage}" data-type="error"></div>
         
         <!-- Фильтры -->
         <div class="filters">
@@ -80,28 +80,32 @@
                 </div>
                 
                 <div class="card-actions admin-actions">
-                    <button class="btn btn-sm btn-success" onclick="openTopupModal([[${card.id}]], '[[${card.maskedNumber}]]', [[${card.balance}]])">💰 Пополнить</button>
+                    <button class="btn btn-sm btn-success topup-btn" 
+                            th:data-card-id="${card.id}" 
+                            th:data-card-number="${card.maskedNumber}" 
+                            th:data-card-balance="${card.balance}">💰 Пополнить</button>
+                    
+                    <!-- Скрытые поля для отладки -->
+                    <div class="hidden-card-data" style="display: none;">
+                        <span class="card-id" th:text="${card.id}"></span>
+                        <span class="card-number" th:text="${card.maskedNumber}"></span>
+                        <span class="card-balance" th:text="${card.balance}"></span>
+                    </div>
                     
                     <div th:if="${card.status.name() == 'ACTIVE'}" class="action-group">
-                        <form th:action="@{/cards/{id}/block(id=${card.id})}" method="post" class="inline-form">
-                            <input type="hidden" name="reason" value="Блокировка администратором">
-                            <button type="button" class="btn btn-sm btn-warning" 
-                                    onclick="showCustomConfirm('🔒 Блокировка карты', 'Вы уверены, что хотите заблокировать эту карту?', 'Заблокировать', 'Отмена', () => { this.closest('form').submit(); })">Заблокировать</button>
-                        </form>
+                        <button type="button" class="btn btn-sm btn-warning block-btn" 
+                                th:data-card-id="${card.id}"
+                                th:data-reason="'Блокировка администратором'">Заблокировать</button>
                     </div>
                     
                     <div th:if="${card.status.name() == 'BLOCKED'}" class="action-group">
-                        <form th:action="@{/cards/{id}/activate(id=${card.id})}" method="post" class="inline-form">
-                            <button type="button" class="btn btn-sm btn-success" 
-                                    onclick="showCustomConfirm('🔓 Активация карты', 'Вы уверены, что хотите активировать эту карту?', 'Активировать', 'Отмена', () => { this.closest('form').submit(); })">Активировать</button>
-                        </form>
+                        <button type="button" class="btn btn-sm btn-success activate-btn" 
+                                th:data-card-id="${card.id}">Активировать</button>
                     </div>
                     
                     <div class="action-group">
-                        <form th:action="@{/cards/{id}/delete(id=${card.id})}" method="post" class="inline-form">
-                            <button type="button" class="btn btn-sm btn-danger" 
-                                    onclick="showCustomConfirm('🗑️ Удаление карты', 'Вы уверены, что хотите удалить эту карту? Это действие необратимо!', 'Удалить', 'Отмена', () => { this.closest('form').submit(); })">Удалить</button>
-                        </form>
+                        <button type="button" class="btn btn-sm btn-danger delete-btn" 
+                                th:data-card-id="${card.id}">Удалить</button>
                     </div>
                 </div>
             </div>
@@ -164,5 +168,24 @@
     </div>
 
     <script th:src="@{/js/cards.js}"></script>
+    <script th:src="@{/js/card-actions.js}"></script>
+    
+    <script>
+        // Обработка статусных уведомлений
+        document.addEventListener('DOMContentLoaded', function() {
+            const successNotification = document.querySelector('.status-notification[data-type="success"]');
+            const errorNotification = document.querySelector('.status-notification[data-type="error"]');
+            
+            if (successNotification) {
+                const message = successNotification.getAttribute('data-message');
+                showStatusNotification(message, 'success');
+            }
+            
+            if (errorNotification) {
+                const message = errorNotification.getAttribute('data-message');
+                showStatusNotification(message, 'error');
+            }
+        });
+    </script>
 </body>
 </html>

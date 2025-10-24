@@ -232,11 +232,13 @@ body::before {
     display: none;
     align-items: center;
     justify-content: center;
-    animation: fadeIn 0.3s ease-out;
+    opacity: 0;
+    transition: opacity 0.3s ease-out;
 }
 
 .modal-overlay.show {
     display: flex !important;
+    opacity: 1;
 }
 
 .modal-content {
@@ -818,6 +820,46 @@ body::before {
     margin: 0;
     font-size: 0.95rem;
     line-height: 1.5;
+}
+
+/* Error Page Styles */
+.error-container {
+    text-align: center;
+    padding: 3rem 2rem;
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    margin: 2rem auto;
+    max-width: 500px;
+}
+
+.error-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    color: #dc3545;
+}
+
+.error-container h2 {
+    color: #333;
+    margin-bottom: 1rem;
+    font-size: 1.8rem;
+}
+
+.error-container p {
+    color: #666;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+}
+
+.error-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.error-actions .btn {
+    min-width: 120px;
 }
 
 /* Responsive Design */

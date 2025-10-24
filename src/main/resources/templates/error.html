@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ошибка - Bank Cards</title>
+    <link rel="stylesheet" th:href="@{/css/cards.css}">
+</head>
+<body>
+    <div class="header">
+        <h1>⚠️ Ошибка</h1>
+        <div class="header-actions">
+            <a href="/" class="btn btn-primary">🏠 Домой</a>
+            <a href="/cards" class="btn btn-secondary">Мои карты</a>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="error-container">
+            <div class="error-icon">❌</div>
+            <h2>Произошла ошибка</h2>
+            <p>К сожалению, произошла непредвиденная ошибка. Попробуйте вернуться на главную страницу.</p>
+            
+            <div class="error-actions">
+                <a href="/" class="btn btn-primary">🏠 На главную</a>
+                <a href="/cards" class="btn btn-secondary">💳 Мои карты</a>
+                <button onclick="history.back()" class="btn btn-secondary">← Назад</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

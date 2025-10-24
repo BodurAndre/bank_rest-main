@@ -120,32 +120,25 @@ public class WebBankCardController {
      * Блокировка карты
      */
     @PostMapping("/{id}/block")
-    public String blockCard(
+    public ResponseEntity<?> blockCard(
             @PathVariable Long id,
             @RequestParam String reason,
-            Authentication authentication,
-            RedirectAttributes redirectAttributes) {
+            Authentication authentication) {
         
         String username = authentication.getName();
         User currentUser = userService.findByEmail(username).orElseThrow(() -> new RuntimeException("Пользователь не найден"));
         
         if (!bankCardService.canUserManageCard(currentUser, id) && !currentUser.getRole().equals(User.Role.ADMIN)) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Нет доступа к карте");
-            return "redirect:/cards";
+            return ResponseEntity.status(403).body("Нет доступа к карте");
         }
         
         try {
             bankCardService.blockCard(id, reason);
-            redirectAttributes.addFlashAttribute("successMessage", "✅ Карта успешно заблокирована");
+            return ResponseEntity.ok("✅ Карта успешно заблокирована");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "❌ Ошибка при блокировке: " + e.getMessage());
-        }
-        
-        // Редирект в зависимости от роли пользователя
-        if (currentUser.getRole().equals(User.Role.ADMIN)) {
-            return "redirect:/cards/admin";
-        } else {
-            return "redirect:/cards";
+            System.err.println("Error blocking card " + id + ": " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("❌ Ошибка при блокировке: " + e.getMessage());
         }
     }
 
@@ -153,54 +146,50 @@ public class WebBankCardController {
      * Активация карты (только для админа)
      */
     @PostMapping("/{id}/activate")
-    public String activateCard(
+    public ResponseEntity<?> activateCard(
             @PathVariable Long id,
-            Authentication authentication,
-            RedirectAttributes redirectAttributes) {
+            Authentication authentication) {
         
         String username = authentication.getName();
         User currentUser = userService.findByEmail(username).orElseThrow(() -> new RuntimeException("Пользователь не найден"));
         
         if (!currentUser.getRole().equals(User.Role.ADMIN)) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Недостаточно прав");
-            return "redirect:/cards";
+            return ResponseEntity.status(403).body("Недостаточно прав");
         }
         
         try {
-            bankCardService.activateCard(id);
-            redirectAttributes.addFlashAttribute("successMessage", "✅ Карта успешно активирована");
+            bankCardService.activateCardSimple(id);
+            return ResponseEntity.ok("✅ Карта успешно активирована");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "❌ Ошибка при активации: " + e.getMessage());
+            System.err.println("Error activating card " + id + ": " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("❌ Ошибка при активации: " + e.getMessage());
         }
-        
-        return "redirect:/cards/admin";
     }
 
     /**
      * Удаление карты (только для админа)
      */
     @PostMapping("/{id}/delete")
-    public String deleteCard(
+    public ResponseEntity<?> deleteCard(
             @PathVariable Long id,
-            Authentication authentication,
-            RedirectAttributes redirectAttributes) {
+            Authentication authentication) {
         
         String username = authentication.getName();
         User currentUser = userService.findByEmail(username).orElseThrow(() -> new RuntimeException("Пользователь не найден"));
         
         if (!currentUser.getRole().equals(User.Role.ADMIN)) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Недостаточно прав");
-            return "redirect:/cards";
+            return ResponseEntity.status(403).body("Недостаточно прав");
         }
         
         try {
             bankCardService.deleteCard(id);
-            redirectAttributes.addFlashAttribute("successMessage", "🗑️ Карта успешно удалена");
+            return ResponseEntity.ok("🗑️ Карта успешно удалена");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "❌ Ошибка при удалении: " + e.getMessage());
+            System.err.println("Error deleting card " + id + ": " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("❌ Ошибка при удалении: " + e.getMessage());
         }
-        
-        return "redirect:/cards/admin";
     }
 
     /**
