@@ -430,4 +430,28 @@ public class WebBankCardController {
             return ResponseEntity.badRequest().body("❌ Ошибка при отправке запроса: " + e.getMessage());
         }
     }
+    
+    /**
+     * Запрос на создание новой карты (только для пользователей)
+     */
+    @PostMapping("/request-create")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<?> requestCardCreate(
+            @RequestParam String expiryDate,
+            Authentication authentication) {
+
+        String username = authentication.getName();
+        User currentUser = userService.findByEmail(username)
+            .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+
+        try {
+            notificationService.createCardCreateRequest(currentUser, expiryDate);
+            return ResponseEntity.ok("✅ Запрос на создание карты отправлен администраторам");
+
+        } catch (Exception e) {
+            System.err.println("Error requesting card creation: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("❌ Ошибка при отправке запроса: " + e.getMessage());
+        }
+    }
 }

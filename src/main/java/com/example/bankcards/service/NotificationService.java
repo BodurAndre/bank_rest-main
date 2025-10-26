@@ -10,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -77,6 +78,31 @@ public class NotificationService {
         System.out.println("Type length: " + Notification.Type.CARD_UNBLOCK_REQUEST.name().length());
         
         Notification notification = new Notification(user, card, Notification.Type.CARD_UNBLOCK_REQUEST, title, message);
+        return notificationRepository.save(notification);
+    }
+    
+    /**
+     * Создает уведомление о запросе на создание карты
+     */
+    @Transactional
+    public Notification createCardCreateRequest(User user, String expiryDate) {
+        String title = "Запрос на создание новой карты";
+        String message = String.format(
+            "Пользователь %s %s запросил создание новой банковской карты. Срок действия: %s",
+            user.getFirstName(),
+            user.getLastName(),
+            expiryDate
+        );
+        
+        // Создаем уведомление без привязки к конкретной карте (карта еще не создана)
+        Notification notification = new Notification();
+        notification.setUser(user);
+        notification.setCard(null); // Карта будет создана позже
+        notification.setType(Notification.Type.CARD_CREATE_REQUEST);
+        notification.setTitle(title);
+        notification.setMessage(message);
+        notification.setCreatedAt(LocalDateTime.now());
+        
         return notificationRepository.save(notification);
     }
     

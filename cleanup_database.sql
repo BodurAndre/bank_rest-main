@@ -5,7 +5,7 @@
 DROP TABLE IF EXISTS notifications;
 
 -- Очищаем таблицы Liquibase для повторного выполнения миграций
-DELETE FROM DATABASECHANGELOG WHERE ID IN ('6', '8', '9', '10', '11', '12');
+DELETE FROM DATABASECHANGELOG WHERE ID IN ('6', '8', '9', '10', '11', '12', '13');
 DELETE FROM DATABASECHANGELOGLOCK;
 
 -- Удаляем пользователей по умолчанию для правильного пересоздания

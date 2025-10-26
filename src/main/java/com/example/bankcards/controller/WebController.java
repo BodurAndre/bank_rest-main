@@ -17,6 +17,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import java.util.Optional;
 
 /**
@@ -94,5 +96,21 @@ public class WebController {
     @GetMapping("/error")
     public String error() {
         return "error";
+    }
+    
+    /**
+     * Обработка запросов favicon.ico
+     */
+    @GetMapping("/favicon.ico")
+    public ResponseEntity<Void> favicon() {
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+    
+    /**
+     * Обработка запросов Chrome DevTools
+     */
+    @GetMapping("/.well-known/appspecific/com.chrome.devtools.json")
+    public ResponseEntity<Void> chromeDevTools() {
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 }

@@ -10,6 +10,9 @@
     <div class="header">
         <h1>💳 Мои карты</h1>
         <div class="header-actions">
+            <button th:if="${!isAdmin}" type="button" class="btn btn-success request-card-btn">
+                ➕ Запросить создание карты
+            </button>
             <a href="/" class="btn btn-primary">🏠 Домой</a>
             <a href="/transfers" class="btn btn-primary">Переводы</a>
             <a href="/logout" class="btn btn-secondary">Выйти</a>
@@ -191,5 +194,6 @@
             }
         });
     </script>
+    <script th:src="@{/js/card-create-request.js}"></script>
 </body>
 </html>

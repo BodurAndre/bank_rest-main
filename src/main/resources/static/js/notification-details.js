@@ -43,12 +43,14 @@ function showNotificationDetails(notificationId, cardId, userName, cardNumber, r
                     <span class="detail-label">Пользователь:</span>
                     <span class="detail-value">${userName}</span>
                 </div>
+                ${cardNumber ? `
                 <div class="detail-row">
                     <span class="detail-label">Номер карты:</span>
                     <span class="detail-value">${cardNumber}</span>
                 </div>
+                ` : ''}
                 <div class="detail-row">
-                    <span class="detail-label">Причина блокировки:</span>
+                    <span class="detail-label">Описание:</span>
                     <span class="detail-value">${reason}</span>
                 </div>
                 <div class="detail-row">
@@ -314,6 +316,11 @@ function setModalTitleAndActions(notificationType, cardId, notificationId) {
             addUnblockButton(cardId, notificationId);
             break;
             
+        case 'CARD_CREATE_REQUEST':
+            titleElement.textContent = '🔍 Детали запроса на создание карты';
+            addCreateCardButton(notificationId);
+            break;
+            
         default:
             titleElement.textContent = '🔍 Детали уведомления';
             break;
@@ -367,6 +374,109 @@ function addUnblockButton(cardId, notificationId) {
     const closeButton = actionsContainer.querySelector('button[onclick="closeNotificationDetails()"]');
     actionsContainer.insertBefore(unblockButton, closeButton);
 }
+
+/**
+ * Добавляет кнопку создания карты
+ */
+function addCreateCardButton(notificationId) {
+    const actionsContainer = document.getElementById('notificationActions');
+    const createButton = document.createElement('button');
+    createButton.type = 'button';
+    createButton.className = 'btn btn-primary';
+    createButton.innerHTML = '➕ Создать карту';
+    createButton.onclick = () => createCardFromNotification(notificationId);
+    
+    // Вставляем перед кнопкой "Закрыть"
+    const closeButton = actionsContainer.querySelector('button[onclick="closeNotificationDetails()"]');
+    actionsContainer.insertBefore(createButton, closeButton    );
+}
+
+/**
+ * Создает карту из уведомления (для админа)
+ */
+function createCardFromNotification(notificationId) {
+    const button = document.querySelector(`.details-btn[data-notification-id="${notificationId}"]`);
+    const userName = button ? button.getAttribute('data-user-name') : 'пользователя';
+    
+    showCustomConfirm(
+        '➕ Создание карты',
+        `Создать новую карту для ${userName}?`,
+        'Создать',
+        'Отмена',
+        () => {
+            // Получаем email пользователя из сообщения уведомления
+            const reason = button ? button.getAttribute('data-reason') : '';
+            const userEmailMatch = reason.match(/Пользователь\s+(.+?)\s+запросил/);
+            
+            if (!userEmailMatch) {
+                showCustomNotification('❌ Ошибка', 'Не удалось определить пользователя', 'error');
+                return;
+            }
+            
+            // Извлекаем срок действия из сообщения
+            const expiryMatch = reason.match(/Срок действия:\s+(\d{2}\/\d{2})/);
+            const expiryDate = expiryMatch ? expiryMatch[1] : '12/26';
+            
+            // Создаем карту через API создания карт
+            const createCardData = {
+                ownerEmail: getUserEmailFromNotification(notificationId),
+                expiryDate: expiryDate
+            };
+            
+            fetch('/api/cards', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(createCardData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Ошибка создания карты');
+                }
+                return response.json();
+            })
+            .then(card => {
+                // Отмечаем уведомление как обработанное
+                return fetch(`/notifications/${notificationId}/process`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+            })
+            .then(processResponse => {
+                if (!processResponse.ok) {
+                    console.warn('Не удалось отметить уведомление как обработанное');
+                }
+                showCustomNotification('✅ Успех', 'Карта создана и уведомление обработано', 'success');
+                closeNotificationDetails();
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            })
+            .catch(error => {
+                console.error('Error creating card:', error);
+                showCustomNotification('❌ Ошибка', 'Ошибка при создании карты: ' + error.message, 'error');
+            });
+        }
+    );
+}
+
+/**
+ * Получает email пользователя из уведомления
+ */
+function getUserEmailFromNotification(notificationId) {
+    // Получаем email из data-атрибута кнопки
+    const button = document.querySelector(`.details-btn[data-notification-id="${notificationId}"]`);
+    if (!button) {
+        return 'user@git.com'; // fallback
+    }
+    
+    const userEmail = button.getAttribute('data-user-email');
+    return userEmail || 'user@git.com'; // fallback если email не найден
+}
+
 
 // Закрытие модального окна при клике вне его
 document.addEventListener('click', function(e) {

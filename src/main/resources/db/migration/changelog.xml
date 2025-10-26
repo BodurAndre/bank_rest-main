@@ -40,5 +40,9 @@
     <changeSet id="12" author="system">
         <sqlFile path="V12__Reset_default_users.sql" relativeToChangelogFile="true"/>
     </changeSet>
+    
+    <changeSet id="13" author="system">
+        <sqlFile path="V13__Make_notifications_card_id_nullable.sql" relativeToChangelogFile="true"/>
+    </changeSet>
 
 </databaseChangeLog>

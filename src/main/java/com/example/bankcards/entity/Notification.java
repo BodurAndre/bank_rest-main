@@ -19,7 +19,7 @@ public class Notification {
     private User user;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "card_id", nullable = false)
+    @JoinColumn(name = "card_id", nullable = true)
     private BankCard card;
     
     @Enumerated(EnumType.STRING)
@@ -77,6 +77,7 @@ public class Notification {
         CARD_BLOCK_REQUEST("Запрос на блокировку карты"),
         CARD_TOPUP_REQUEST("Запрос на пополнение карты"),
         CARD_UNBLOCK_REQUEST("Запрос на разблокировку карты"),
+        CARD_CREATE_REQUEST("Запрос на создание карты"),
         CARD_ACTIVATED("Карта активирована"),
         CARD_BLOCKED("Карта заблокирована"),
         TRANSFER_COMPLETED("Перевод выполнен");

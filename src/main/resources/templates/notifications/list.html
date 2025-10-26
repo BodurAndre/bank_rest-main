@@ -262,9 +262,10 @@
                         <button th:if="${!notification.isProcessed}" 
                                 type="button" class="btn btn-sm btn-success details-btn" 
                                 th:data-notification-id="${notification.id}"
-                                th:data-card-id="${notification.card.id}"
+                                th:data-card-id="${notification.card != null ? notification.card.id : ''}"
                                 th:data-user-name="${notification.user.firstName + ' ' + notification.user.lastName}"
-                                th:data-card-number="${notification.card.maskedNumber}"
+                                th:data-user-email="${notification.user.email}"
+                                th:data-card-number="${notification.card != null ? notification.card.maskedNumber : ''}"
                                 th:data-reason="${notification.message}"
                                 th:data-amount="${notification.amount}"
                                 th:data-notification-type="${notification.type}">Подробнее</button>
