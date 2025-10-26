@@ -42,7 +42,7 @@ public class WebTransferController {
      * Страница переводов (только для пользователей)
      */
     @GetMapping
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PreAuthorize("hasRole('USER')")
     public String transfersPage(Authentication authentication, Model model) {
         String username = authentication.getName();
         User currentUser = userService.findByEmail(username).orElseThrow(() -> new RuntimeException("Пользователь не найден"));
@@ -60,7 +60,7 @@ public class WebTransferController {
      * Выполнение перевода (только для пользователей)
      */
     @PostMapping("/execute")
-    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    @PreAuthorize("hasRole('USER')")
     public String executeTransfer(
             @ModelAttribute("transferRequest") TransferRequest request,
             Authentication authentication,

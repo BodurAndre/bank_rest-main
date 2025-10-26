@@ -16,8 +16,11 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;
@@ -39,9 +42,10 @@ public class WebBankCardController {
     private NotificationService notificationService;
 
     /**
-     * Страница со списком карт пользователя
+     * Страница со списком карт пользователя (только для обычных пользователей)
      */
     @GetMapping
+    @PreAuthorize("hasRole('USER')")
     public String myCards(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -91,8 +95,16 @@ public class WebBankCardController {
     @PostMapping("/create")
     @PreAuthorize("hasRole('ADMIN')")
     public String createCard(
-            @ModelAttribute("createRequest") CreateBankCardRequest request,
-            RedirectAttributes redirectAttributes) {
+            @Valid @ModelAttribute("createRequest") CreateBankCardRequest request,
+            BindingResult bindingResult,
+            RedirectAttributes redirectAttributes,
+            Model model) {
+        
+        // Проверяем ошибки валидации
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("createRequest", request);
+            return "cards/create";
+        }
         
         try {
             BankCardDto card = bankCardService.createCard(request);

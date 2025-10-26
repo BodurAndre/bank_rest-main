@@ -161,12 +161,8 @@ public class BankCardController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         
-        try {
-            BankCardDto card = bankCardService.blockCard(id, reason);
-            return ResponseEntity.ok(card);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        BankCardDto card = bankCardService.blockCard(id, reason);
+        return ResponseEntity.ok(card);
     }
 
     /**
@@ -183,12 +179,8 @@ public class BankCardController {
     public ResponseEntity<BankCardDto> activateCard(
             @Parameter(description = "ID карты") @PathVariable Long id) {
         
-        try {
-            BankCardDto card = bankCardService.activateCard(id);
-            return ResponseEntity.ok(card);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        }
+        BankCardDto card = bankCardService.activateCard(id);
+        return ResponseEntity.ok(card);
     }
 
     /**
@@ -203,12 +195,8 @@ public class BankCardController {
             @ApiResponse(responseCode = "403", description = "Недостаточно прав")
     })
     public ResponseEntity<Void> deleteCard(@Parameter(description = "ID карты") @PathVariable Long id) {
-        try {
-            bankCardService.deleteCard(id);
-            return ResponseEntity.noContent().build();
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.notFound().build();
-        }
+        bankCardService.deleteCard(id);
+        return ResponseEntity.noContent().build();
     }
 
     /**

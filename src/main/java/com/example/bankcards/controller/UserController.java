@@ -21,14 +21,16 @@ public class UserController {
     private UserService userService;
 
     /**
-     * Поиск пользователей по имени, email или ID
+     * Поиск пользователей по имени, email или ID (только обычные пользователи для создания карт)
      */
     @GetMapping("/search")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<UserSearchResult>> searchUsers(@RequestParam String q) {
         List<User> users = userService.searchUsers(q);
         
+        // Фильтруем только пользователей с ролью USER (исключаем админов)
         List<UserSearchResult> results = users.stream()
+                .filter(user -> user.getRole() == User.Role.USER) // Только обычные пользователи
                 .map(user -> new UserSearchResult(
                         user.getId(),
                         user.getFirstName(),

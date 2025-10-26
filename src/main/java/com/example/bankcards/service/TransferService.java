@@ -6,8 +6,10 @@ import com.example.bankcards.dto.TransferStats;
 import com.example.bankcards.entity.BankCard;
 import com.example.bankcards.entity.Transfer;
 import com.example.bankcards.entity.User;
+import com.example.bankcards.exception.*;
 import com.example.bankcards.repository.BankCardRepository;
 import com.example.bankcards.repository.TransferRepository;
+import com.example.bankcards.util.ValidationUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,37 +32,50 @@ public class TransferService {
 
     @Autowired
     private BankCardRepository bankCardRepository;
+    
+    @Autowired
+    private ValidationUtils validationUtils;
 
     /**
      * Выполняет перевод между картами
      */
     public TransferResponse transfer(TransferRequest request, User user) {
+        // Валидация входных данных
+        validationUtils.validateId(request.getFromCardId(), "карты отправителя");
+        validationUtils.validateId(request.getToCardId(), "карты получателя");
+        validationUtils.validateMinAmount(request.getAmount(), new BigDecimal("0.01"));
+        validationUtils.validateDescription(request.getDescription(), "Описание перевода");
+        
         // Находим карты
         BankCard fromCard = bankCardRepository.findById(request.getFromCardId())
-                .orElseThrow(() -> new IllegalArgumentException("Карта отправителя не найдена"));
+                .orElseThrow(() -> new ResourceNotFoundException("Карта отправителя", request.getFromCardId()));
 
         BankCard toCard = bankCardRepository.findById(request.getToCardId())
-                .orElseThrow(() -> new IllegalArgumentException("Карта получателя не найдена"));
+                .orElseThrow(() -> new ResourceNotFoundException("Карта получателя", request.getToCardId()));
 
         // Проверяем, что обе карты принадлежат пользователю
         if (!fromCard.getOwner().getId().equals(user.getId()) || 
             !toCard.getOwner().getId().equals(user.getId())) {
-            throw new RuntimeException("Нет доступа к одной из карт");
+            throw new BusinessException("Нет доступа к одной из карт", "ACCESS_DENIED");
         }
 
         // Проверяем, что карты разные
         if (fromCard.getId().equals(toCard.getId())) {
-            throw new IllegalArgumentException("Нельзя переводить на ту же карту");
+            throw new ValidationException("Нельзя переводить на ту же карту");
         }
 
         // Проверяем, что карты активны
-        if (!fromCard.canBeUsed() || !toCard.canBeUsed()) {
-            throw new IllegalArgumentException("Одна из карт недоступна для операций");
+        if (!fromCard.canBeUsed()) {
+            throw new CardBlockedException(fromCard.getMaskedNumber(), "Карта отправителя заблокирована");
+        }
+        
+        if (!toCard.canBeUsed()) {
+            throw new CardBlockedException(toCard.getMaskedNumber(), "Карта получателя заблокирована");
         }
 
         // Проверяем баланс
         if (fromCard.getBalance().compareTo(request.getAmount()) < 0) {
-            throw new IllegalArgumentException("Недостаточно средств на карте отправителя");
+            throw new InsufficientFundsException(fromCard.getBalance(), request.getAmount());
         }
 
         // Создаем перевод

@@ -4,6 +4,7 @@ import com.example.bankcards.dto.TransferRequest;
 import com.example.bankcards.dto.TransferResponse;
 import com.example.bankcards.dto.TransferStats;
 import com.example.bankcards.entity.User;
+import com.example.bankcards.exception.ResourceNotFoundException;
 import com.example.bankcards.service.TransferService;
 import com.example.bankcards.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -55,16 +56,11 @@ public class TransferController {
             Authentication authentication) {
         
         String username = authentication.getName();
-        User currentUser = userService.findByEmail(username).orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+        User currentUser = userService.findByEmail(username)
+                .orElseThrow(() -> new ResourceNotFoundException("Пользователь", username));
         
-        try {
-            TransferResponse response = transferService.transfer(request, currentUser);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
+        TransferResponse response = transferService.transfer(request, currentUser);
+        return ResponseEntity.ok(response);
     }
 
     /**

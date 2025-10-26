@@ -3,7 +3,9 @@ package com.example.bankcards.service;
 import com.example.bankcards.entity.Notification;
 import com.example.bankcards.entity.User;
 import com.example.bankcards.entity.BankCard;
+import com.example.bankcards.exception.*;
 import com.example.bankcards.repository.NotificationRepository;
+import com.example.bankcards.util.ValidationUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,6 +23,9 @@ public class NotificationService {
     
     @Autowired
     private NotificationRepository notificationRepository;
+    
+    @Autowired
+    private ValidationUtils validationUtils;
     
     /**
      * Создает уведомление о запросе на блокировку карты
@@ -199,8 +204,11 @@ public class NotificationService {
      */
     @Transactional
     public void markAsProcessed(Long notificationId) {
+        // Валидация входных данных
+        validationUtils.validateId(notificationId, "уведомления");
+        
         Notification notification = notificationRepository.findById(notificationId)
-            .orElseThrow(() -> new RuntimeException("Уведомление не найдено"));
+            .orElseThrow(() -> new ResourceNotFoundException("Уведомление", notificationId));
         
         notification.markAsProcessed();
         notificationRepository.save(notification);
@@ -225,6 +233,13 @@ public class NotificationService {
      */
     @Transactional
     public void deleteNotification(Long notificationId) {
+        // Валидация входных данных
+        validationUtils.validateId(notificationId, "уведомления");
+        
+        if (!notificationRepository.existsById(notificationId)) {
+            throw new ResourceNotFoundException("Уведомление", notificationId);
+        }
+        
         notificationRepository.deleteById(notificationId);
     }
     

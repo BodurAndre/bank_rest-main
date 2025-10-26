@@ -4,9 +4,11 @@ import com.example.bankcards.dto.BankCardDto;
 import com.example.bankcards.dto.CreateBankCardRequest;
 import com.example.bankcards.entity.BankCard;
 import com.example.bankcards.entity.User;
+import com.example.bankcards.exception.*;
 import com.example.bankcards.repository.BankCardRepository;
 import com.example.bankcards.repository.UserRepository;
 import com.example.bankcards.util.CardEncryptionUtil;
+import com.example.bankcards.util.ValidationUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,17 +32,24 @@ public class BankCardService {
 
     @Autowired
     private UserRepository userRepository;
-    
+
     @Autowired
     private CardEncryptionUtil cardEncryptionUtil;
+    
+    @Autowired
+    private ValidationUtils validationUtils;
 
     /**
      * Создает новую банковскую карту (только для админа)
      */
     public BankCardDto createCard(CreateBankCardRequest request) {
+        // Валидация входных данных
+        validationUtils.validateEmail(request.getOwnerEmail());
+        validationUtils.validateExpiryDate(request.getExpiryDateAsLocalDate());
+        
         // Находим пользователя
         User owner = userRepository.findByEmail(request.getOwnerEmail())
-                .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
+                .orElseThrow(() -> new ResourceNotFoundException("Пользователь", request.getOwnerEmail()));
 
         // Генерируем номер карты
         String cardNumber = generateCardNumber();
@@ -59,7 +68,7 @@ public class BankCardService {
 
         // Проверяем уникальность зашифрованного номера
         if (bankCardRepository.existsByCardNumber(encryptedCardNumber)) {
-            throw new IllegalArgumentException("Карта с таким номером уже существует");
+            throw new BusinessException("Карта с таким номером уже существует", "DUPLICATE_CARD_NUMBER");
         }
 
         // Создаем карту с зашифрованным номером
@@ -114,11 +123,15 @@ public class BankCardService {
      * Блокирует карту
      */
     public BankCardDto blockCard(Long cardId, String reason) {
+        // Валидация входных данных
+        validationUtils.validateId(cardId, "карты");
+        validationUtils.validateDescription(reason, "Причина блокировки");
+        
         BankCard card = bankCardRepository.findById(cardId)
-                .orElseThrow(() -> new IllegalArgumentException("Карта не найдена"));
+                .orElseThrow(() -> new ResourceNotFoundException("Карта", cardId));
 
         if (card.getStatus() == BankCard.Status.BLOCKED) {
-            throw new IllegalArgumentException("Карта уже заблокирована");
+            throw new BusinessException("Карта уже заблокирована", "CARD_ALREADY_BLOCKED");
         }
 
         card.block(reason);
@@ -131,12 +144,15 @@ public class BankCardService {
      */
     @Transactional
     public BankCardDto activateCard(Long cardId) {
+        // Валидация входных данных
+        validationUtils.validateId(cardId, "карты");
+        
         try {
             BankCard card = bankCardRepository.findById(cardId)
-                    .orElseThrow(() -> new IllegalArgumentException("Карта не найдена"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Карта", cardId));
 
             if (card.getStatus() == BankCard.Status.ACTIVE) {
-                throw new IllegalArgumentException("Карта уже активна");
+                throw new BusinessException("Карта уже активна", "CARD_ALREADY_ACTIVE");
             }
 
             card.activate();
@@ -179,8 +195,11 @@ public class BankCardService {
      * Удаляет карту (только для админа)
      */
     public void deleteCard(Long cardId) {
+        // Валидация входных данных
+        validationUtils.validateId(cardId, "карты");
+        
         if (!bankCardRepository.existsById(cardId)) {
-            throw new IllegalArgumentException("Карта не найдена");
+            throw new ResourceNotFoundException("Карта", cardId);
         }
         bankCardRepository.deleteById(cardId);
     }
@@ -252,19 +271,19 @@ public class BankCardService {
      * Пополнение карты
      */
     public void topupCard(Long cardId, Double amount) {
-        if (amount <= 0) {
-            throw new IllegalArgumentException("Сумма пополнения должна быть больше 0");
-        }
+        // Валидация входных данных
+        validationUtils.validateId(cardId, "карты");
+        BigDecimal topupAmount = BigDecimal.valueOf(amount);
+        validationUtils.validateMinAmount(topupAmount, new BigDecimal("0.01"));
         
         BankCard card = bankCardRepository.findById(cardId)
-                .orElseThrow(() -> new IllegalArgumentException("Карта не найдена"));
+                .orElseThrow(() -> new ResourceNotFoundException("Карта", cardId));
         
         if (card.getStatus() != BankCard.Status.ACTIVE) {
-            throw new IllegalArgumentException("Нельзя пополнить неактивную карту");
+            throw new CardBlockedException(card.getMaskedNumber(), "Карта неактивна");
         }
         
         BigDecimal currentBalance = card.getBalance();
-        BigDecimal topupAmount = BigDecimal.valueOf(amount);
         card.setBalance(currentBalance.add(topupAmount));
         
         bankCardRepository.save(card);

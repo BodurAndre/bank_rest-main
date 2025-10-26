@@ -1,7 +1,9 @@
 package com.example.bankcards.service;
 
 import com.example.bankcards.entity.User;
+import com.example.bankcards.exception.*;
 import com.example.bankcards.repository.UserRepository;
+import com.example.bankcards.util.ValidationUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,6 +20,9 @@ import java.util.Optional;
 public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    
+    @Autowired
+    private ValidationUtils validationUtils;
 
     @Autowired
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
@@ -29,8 +34,19 @@ public class UserService {
      * Создает нового пользователя
      */
     public User createUser(User user) {
+        // Валидация входных данных
+        validationUtils.validateEmail(user.getEmail());
+        validationUtils.validateName(user.getFirstName(), "Имя");
+        validationUtils.validateName(user.getLastName(), "Фамилия");
+        validationUtils.validatePassword(user.getPassword());
+        
+        if (user.getDateOfBirth() != null) {
+            validationUtils.validateDateOfBirth(user.getDateOfBirth());
+        }
+        
+        // Проверяем уникальность email
         if (userRepository.existsByEmail(user.getEmail())) {
-            throw new IllegalArgumentException("Пользователь с таким email уже существует.");
+            throw new BusinessException("Пользователь с таким email уже существует", "DUPLICATE_EMAIL");
         }
         
         // Устанавливаем username равным email, если он не установлен
@@ -73,13 +89,6 @@ public class UserService {
     }
 
     /**
-     * Удаляет пользователя
-     */
-    public void deleteById(Long id) {
-        userRepository.deleteById(id);
-    }
-
-    /**
      * Поиск пользователей по имени, email или ID
      */
     public List<User> searchUsers(String query) {
@@ -105,26 +114,33 @@ public class UserService {
      * Обновление пользователя
      */
     public User updateUser(Long id, User userData) {
-        User existingUser = userRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+        // Валидация ID
+        validationUtils.validateId(id, "пользователя");
         
-        // Обновляем только непустые поля
+        User existingUser = userRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Пользователь", id));
+        
+        // Обновляем только непустые поля с валидацией
         if (userData.getFirstName() != null && !userData.getFirstName().isEmpty()) {
+            validationUtils.validateName(userData.getFirstName(), "Имя");
             existingUser.setFirstName(userData.getFirstName());
         }
         if (userData.getLastName() != null && !userData.getLastName().isEmpty()) {
+            validationUtils.validateName(userData.getLastName(), "Фамилия");
             existingUser.setLastName(userData.getLastName());
         }
         if (userData.getEmail() != null && !userData.getEmail().isEmpty()) {
+            validationUtils.validateEmail(userData.getEmail());
             // Проверяем, что email не занят другим пользователем
             if (!existingUser.getEmail().equals(userData.getEmail()) && 
                 userRepository.existsByEmail(userData.getEmail())) {
-                throw new IllegalArgumentException("Пользователь с таким email уже существует");
+                throw new BusinessException("Пользователь с таким email уже существует", "DUPLICATE_EMAIL");
             }
             existingUser.setEmail(userData.getEmail());
             existingUser.setUsername(userData.getEmail());
         }
         if (userData.getPassword() != null && !userData.getPassword().isEmpty()) {
+            validationUtils.validatePassword(userData.getPassword());
             existingUser.setPassword(passwordEncoder.encode(userData.getPassword()));
         }
         if (userData.getRole() != null) {
@@ -137,6 +153,7 @@ public class UserService {
             existingUser.setGender(userData.getGender());
         }
         if (userData.getDateOfBirth() != null) {
+            validationUtils.validateDateOfBirth(userData.getDateOfBirth());
             existingUser.setDateOfBirth(userData.getDateOfBirth());
         }
         
@@ -147,8 +164,11 @@ public class UserService {
      * Удаление пользователя
      */
     public void deleteUser(Long id) {
+        // Валидация входных данных
+        validationUtils.validateId(id, "пользователя");
+        
         if (!userRepository.existsById(id)) {
-            throw new RuntimeException("Пользователь не найден");
+            throw new ResourceNotFoundException("Пользователь", id);
         }
         userRepository.deleteById(id);
     }
