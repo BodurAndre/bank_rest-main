@@ -75,7 +75,9 @@ springdoc:
 logging:
   level:
     com.example.bankcards: DEBUG
+    com.example.bankcards.service.CardExpirationSchedulerService: INFO
     org.springframework.security: DEBUG
+    org.springframework.scheduling: INFO
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
   pattern:

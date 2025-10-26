@@ -44,5 +44,13 @@
     <changeSet id="13" author="system">
         <sqlFile path="V13__Make_notifications_card_id_nullable.sql" relativeToChangelogFile="true"/>
     </changeSet>
+    
+    <changeSet id="14" author="system">
+        <sqlFile path="V14__Add_new_expiry_date_to_notifications.sql" relativeToChangelogFile="true"/>
+    </changeSet>
+    
+    <changeSet id="15" author="system">
+        <sqlFile path="V15__Create_audit_logs_table.sql" relativeToChangelogFile="true"/>
+    </changeSet>
 
 </databaseChangeLog>

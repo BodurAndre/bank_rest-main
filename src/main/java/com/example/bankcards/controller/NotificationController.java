@@ -15,6 +15,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.http.ResponseEntity;
 
 /**
  * Контроллер для работы с уведомлениями
@@ -147,5 +148,24 @@ public class NotificationController {
         // Здесь можно добавить логику для показа деталей уведомления
         // Пока просто редиректим на список
         return "redirect:/notifications";
+    }
+    
+    // REST API endpoints
+    
+    /**
+     * REST API: Отметить уведомление как обработанное
+     */
+    @PostMapping("/api/notifications/{id}/mark-processed")
+    @PreAuthorize("hasRole('ADMIN')")
+    @ResponseBody
+    public ResponseEntity<?> markAsProcessedApi(@PathVariable Long id) {
+        try {
+            notificationService.markAsProcessed(id);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            System.err.println("Error marking notification as processed: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Ошибка при обновлении уведомления: " + e.getMessage());
+        }
     }
 }

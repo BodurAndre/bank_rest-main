@@ -268,6 +268,7 @@
                                 th:data-card-number="${notification.card != null ? notification.card.maskedNumber : ''}"
                                 th:data-reason="${notification.message}"
                                 th:data-amount="${notification.amount}"
+                                th:data-new-expiry-date="${notification.newExpiryDate}"
                                 th:data-notification-type="${notification.type}">Подробнее</button>
                         <span th:if="${notification.isProcessed}" class="badge badge-secondary">Обработано</span>
                     </div>

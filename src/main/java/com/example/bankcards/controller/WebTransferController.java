@@ -2,8 +2,8 @@ package com.example.bankcards.controller;
 
 import com.example.bankcards.dto.BankCardDto;
 import com.example.bankcards.dto.TransferRequest;
-import com.example.bankcards.dto.TransferResponse;
 import com.example.bankcards.dto.TransferStats;
+import com.example.bankcards.dto.TransferResponse;
 import com.example.bankcards.entity.User;
 import com.example.bankcards.service.BankCardService;
 import com.example.bankcards.service.TransferService;
@@ -54,6 +54,24 @@ public class WebTransferController {
         model.addAttribute("transferRequest", new TransferRequest());
         
         return "transfers/transfer";
+    }
+    
+    /**
+     * Страница статистики переводов (только для пользователей)
+     */
+    @GetMapping("/stats")
+    @PreAuthorize("hasRole('USER')")
+    public String transferStats(Authentication authentication, Model model) {
+        String username = authentication.getName();
+        User currentUser = userService.findByEmail(username)
+            .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+
+        // Получаем статистику переводов
+        TransferStats stats = transferService.getTransferStats(currentUser);
+        model.addAttribute("stats", stats);
+        model.addAttribute("user", currentUser);
+
+        return "transfers/stats";
     }
 
     /**
@@ -124,16 +142,4 @@ public class WebTransferController {
                 .orElse("redirect:/transfers/history?error=not_found");
     }
 
-    /**
-     * Статистика переводов
-     */
-    @GetMapping("/stats")
-    public String transferStats(Authentication authentication, Model model) {
-        String username = authentication.getName();
-        User currentUser = userService.findByEmail(username).orElseThrow(() -> new RuntimeException("Пользователь не найден"));
-        TransferStats stats = transferService.getTransferStats(currentUser);
-        
-        model.addAttribute("stats", stats);
-        return "transfers/stats";
-    }
 }

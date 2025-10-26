@@ -35,6 +35,9 @@ public class Notification {
     @Column
     private Double amount;
     
+    @Column
+    private String newExpiryDate; // Для запросов на пересоздание карты (формат MM/YY)
+    
     @Column(nullable = false)
     private Boolean isRead = false;
     
@@ -78,6 +81,7 @@ public class Notification {
         CARD_TOPUP_REQUEST("Запрос на пополнение карты"),
         CARD_UNBLOCK_REQUEST("Запрос на разблокировку карты"),
         CARD_CREATE_REQUEST("Запрос на создание карты"),
+        CARD_RECREATE_REQUEST("Запрос на пересоздание карты"), // New type
         CARD_ACTIVATED("Карта активирована"),
         CARD_BLOCKED("Карта заблокирована"),
         TRANSFER_COMPLETED("Перевод выполнен");
@@ -191,6 +195,14 @@ public class Notification {
     
     public void setProcessedAt(LocalDateTime processedAt) {
         this.processedAt = processedAt;
+    }
+    
+    public String getNewExpiryDate() {
+        return newExpiryDate;
+    }
+    
+    public void setNewExpiryDate(String newExpiryDate) {
+        this.newExpiryDate = newExpiryDate;
     }
     
     public Double getAmount() {

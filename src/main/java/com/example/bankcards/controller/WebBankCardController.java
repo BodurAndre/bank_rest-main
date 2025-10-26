@@ -7,6 +7,8 @@ import com.example.bankcards.entity.User;
 import com.example.bankcards.service.BankCardService;
 import com.example.bankcards.service.UserService;
 import com.example.bankcards.service.NotificationService;
+import com.example.bankcards.repository.BankCardRepository;
+import com.example.bankcards.entity.Notification;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -40,6 +42,9 @@ public class WebBankCardController {
     
     @Autowired
     private NotificationService notificationService;
+    
+    @Autowired
+    private BankCardRepository bankCardRepository;
 
     /**
      * Страница со списком карт пользователя (только для обычных пользователей)
@@ -462,6 +467,47 @@ public class WebBankCardController {
 
         } catch (Exception e) {
             System.err.println("Error requesting card creation: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("❌ Ошибка при отправке запроса: " + e.getMessage());
+        }
+    }
+    
+    @PostMapping("/{cardId}/request-recreate")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<?> requestCardRecreate(
+            @PathVariable Long cardId,
+            @RequestParam String newExpiryDate,
+            Authentication authentication) {
+
+        String username = authentication.getName();
+        User currentUser = userService.findByEmail(username)
+            .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+
+        try {
+            System.out.println("🔄 Запрос на пересоздание карты: cardId=" + cardId + ", newExpiryDate=" + newExpiryDate + ", user=" + currentUser.getEmail());
+            
+            // Найти карту и проверить, что она принадлежит пользователю
+            BankCard card = bankCardRepository.findById(cardId)
+                .orElseThrow(() -> new RuntimeException("Карта не найдена"));
+                
+            System.out.println("🔍 Найдена карта: " + card.getMaskedNumber() + ", статус: " + card.getStatus() + ", истекла: " + card.isExpired());
+                
+            if (!card.getOwner().getId().equals(currentUser.getId())) {
+                return ResponseEntity.status(403).body("❌ Нет доступа к этой карте");
+            }
+            
+            // Проверить, что карта истекла
+            if (!card.isExpired()) {
+                return ResponseEntity.badRequest().body("❌ Карта еще не истекла");
+            }
+
+            Notification notification = notificationService.createCardRecreateRequest(currentUser, card, newExpiryDate);
+            System.out.println("✅ Создано уведомление: id=" + notification.getId() + ", тип=" + notification.getType());
+            
+            return ResponseEntity.ok("✅ Запрос на пересоздание карты отправлен администраторам");
+
+        } catch (Exception e) {
+            System.err.println("Error requesting card recreation: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.badRequest().body("❌ Ошибка при отправке запроса: " + e.getMessage());
         }

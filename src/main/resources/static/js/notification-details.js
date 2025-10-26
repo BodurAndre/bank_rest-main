@@ -129,9 +129,9 @@ function blockCardFromNotification(cardId, notificationId) {
                 if (response.ok) {
                     showCustomNotification('✅ Успех', 'Карта заблокирована и уведомление обработано', 'success');
                     closeNotificationDetails();
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1500);
+                    
+                    // Обновляем статус уведомления в DOM вместо перезагрузки страницы
+                    updateNotificationStatusInDOM(notificationId);
                 } else {
                     throw new Error('Ошибка при обработке уведомления');
                 }
@@ -221,9 +221,9 @@ function submitTopupFromNotification(cardId, notificationId, amount) {
             console.log('Notification marked as processed');
             showCustomNotification('✅ Успех', 'Карта пополнена на ' + amount + ' ₽ и уведомление обработано', 'success');
             closeNotificationDetails();
-            setTimeout(() => {
-                window.location.reload();
-            }, 1500);
+            
+            // Обновляем статус уведомления в DOM вместо перезагрузки страницы
+            updateNotificationStatusInDOM(notificationId);
         } else {
             throw new Error('Ошибка при обработке уведомления');
         }
@@ -274,9 +274,9 @@ function unblockCardFromNotification(cardId, notificationId) {
                     console.log('Notification marked as processed');
                     showCustomNotification('✅ Успех', 'Карта разблокирована и уведомление обработано', 'success');
                     closeNotificationDetails();
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 1500);
+                    
+                    // Обновляем статус уведомления в DOM вместо перезагрузки страницы
+                    updateNotificationStatusInDOM(notificationId);
                 } else {
                     throw new Error('Ошибка при обработке уведомления');
                 }
@@ -319,6 +319,11 @@ function setModalTitleAndActions(notificationType, cardId, notificationId) {
         case 'CARD_CREATE_REQUEST':
             titleElement.textContent = '🔍 Детали запроса на создание карты';
             addCreateCardButton(notificationId);
+            break;
+            
+        case 'CARD_RECREATE_REQUEST':
+            titleElement.textContent = '🔍 Детали запроса на пересоздание карты';
+            addRecreateCardButton(cardId, notificationId);
             break;
             
         default:
@@ -388,7 +393,20 @@ function addCreateCardButton(notificationId) {
     
     // Вставляем перед кнопкой "Закрыть"
     const closeButton = actionsContainer.querySelector('button[onclick="closeNotificationDetails()"]');
-    actionsContainer.insertBefore(createButton, closeButton    );
+    actionsContainer.insertBefore(createButton, closeButton);
+}
+
+function addRecreateCardButton(cardId, notificationId) {
+    const actionsContainer = document.getElementById('notificationActions');
+    const recreateButton = document.createElement('button');
+    recreateButton.type = 'button';
+    recreateButton.className = 'btn btn-warning';
+    recreateButton.innerHTML = '🔄 Пересоздать карту';
+    recreateButton.onclick = () => recreateCardFromNotification(cardId, notificationId);
+    
+    // Вставляем перед кнопкой "Закрыть"
+    const closeButton = actionsContainer.querySelector('button[onclick="closeNotificationDetails()"]');
+    actionsContainer.insertBefore(recreateButton, closeButton);
 }
 
 /**
@@ -451,9 +469,9 @@ function createCardFromNotification(notificationId) {
                 }
                 showCustomNotification('✅ Успех', 'Карта создана и уведомление обработано', 'success');
                 closeNotificationDetails();
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1500);
+                
+                // Обновляем статус уведомления в DOM вместо перезагрузки страницы
+                updateNotificationStatusInDOM(notificationId);
             })
             .catch(error => {
                 console.error('Error creating card:', error);
@@ -461,6 +479,112 @@ function createCardFromNotification(notificationId) {
             });
         }
     );
+}
+
+/**
+ * Пересоздает карту из уведомления (для админа)
+ */
+function recreateCardFromNotification(cardId, notificationId) {
+    const button = document.querySelector(`.details-btn[data-notification-id="${notificationId}"]`);
+    const userName = button ? button.getAttribute('data-user-name') : 'пользователя';
+
+    showCustomConfirm(
+        '🔄 Пересоздание карты',
+        `Пересоздать карту для ${userName}?`,
+        'Пересоздать',
+        'Отмена',
+        () => {
+            // Получаем новую дату истечения из data-атрибута
+            const newExpiryDate = button ? button.getAttribute('data-new-expiry-date') : '12/26';
+            const userEmail = getUserEmailFromNotification(notificationId);
+            
+            console.log('Recreating card:', { cardId, newExpiryDate, userEmail, notificationId });
+
+            // Сначала создаем новую карту
+            const createCardData = {
+                ownerEmail: userEmail,
+                expiryDate: newExpiryDate
+            };
+
+            fetch('/api/cards', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(createCardData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Ошибка при создании новой карты');
+                }
+                return response.json();
+            })
+            .then(newCard => {
+                console.log('New card created:', newCard);
+                
+                // Теперь удаляем старую карту
+                return fetch(`/api/cards/${cardId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+            })
+            .then(response => {
+                if (!response.ok) {
+                    console.warn('Warning: Could not delete old card, but new card was created');
+                    // Не бросаем ошибку, так как новая карта уже создана
+                }
+                
+                console.log('Old card deleted, marking notification as processed');
+                
+                // Отмечаем уведомление как обработанное
+                return fetch(`/api/notifications/${notificationId}/mark-processed`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+            })
+            .then(response => {
+                if (!response.ok) {
+                    console.warn('Warning: Could not mark notification as processed, but card was recreated');
+                    // Не бросаем ошибку, так как карта уже пересоздана
+                }
+                
+                showCustomNotification('✅ Успех', 'Карта пересоздана успешно', 'success');
+                closeNotificationDetails();
+                
+                // Обновляем статус уведомления в DOM вместо перезагрузки страницы
+                updateNotificationStatusInDOM(notificationId);
+            })
+            .catch(error => {
+                console.error('Error recreating card:', error);
+                showCustomNotification('❌ Ошибка', 'Ошибка при пересоздании карты: ' + error.message, 'error');
+            });
+        }
+    );
+}
+
+/**
+ * Обновляет статус уведомления в DOM без перезагрузки страницы
+ */
+function updateNotificationStatusInDOM(notificationId) {
+    const notificationElement = document.querySelector(`[data-notification-id="${notificationId}"]`).closest('.notification-item');
+    if (notificationElement) {
+        // Находим кнопку "Подробнее" и заменяем на "Обработано"
+        const actionsContainer = notificationElement.querySelector('.notification-actions');
+        if (actionsContainer) {
+            actionsContainer.innerHTML = '<span class="badge badge-secondary">Обработано</span>';
+        }
+        
+        // Обновляем статус в заголовке
+        const statusBadge = notificationElement.querySelector('.status-badge');
+        if (statusBadge) {
+            statusBadge.textContent = 'Обработано';
+            statusBadge.className = 'status-badge status-processed';
+        }
+    }
 }
 
 /**

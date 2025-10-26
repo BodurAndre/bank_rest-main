@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мои действия - Bank Cards</title>
+    <link th:href="@{/css/cards.css}" rel="stylesheet">
+    <style>
+        .audit-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .audit-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .audit-header h1 {
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+        
+        .audit-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .filters {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .filter-group {
+            display: inline-block;
+            margin-right: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .filter-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        
+        .filter-group select {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            min-width: 150px;
+        }
+        
+        .audit-table {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .audit-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .audit-table th {
+            background: #f8f9fa;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #2c3e50;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .audit-table td {
+            padding: 1rem;
+            border-bottom: 1px solid #f1f3f4;
+        }
+        
+        .audit-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .action-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+        
+        .action-login { background: #d4edda; color: #155724; }
+        .action-logout { background: #f8d7da; color: #721c24; }
+        .action-create_card { background: #d1ecf1; color: #0c5460; }
+        .action-block_card { background: #fff3cd; color: #856404; }
+        .action-activate_card { background: #d4edda; color: #155724; }
+        .action-delete_card { background: #f8d7da; color: #721c24; }
+        .action-topup_card { background: #cce5ff; color: #004085; }
+        .action-transfer { background: #e2e3e5; color: #383d41; }
+        .action-export_data { background: #ffeaa7; color: #6c5ce7; }
+        .action-view_cards { background: #a8e6cf; color: #00b894; }
+        .action-view_transfers { background: #fd79a8; color: #e84393; }
+        
+        .status-success { color: #28a745; font-weight: bold; }
+        .status-failed { color: #dc3545; font-weight: bold; }
+        .status-error { color: #fd7e14; font-weight: bold; }
+        
+        .recent-actions {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .recent-actions h3 {
+            margin-bottom: 1rem;
+            color: #2c3e50;
+        }
+        
+        .recent-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #f1f3f4;
+        }
+        
+        .recent-item:last-child {
+            border-bottom: none;
+        }
+        
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #6c757d;
+        }
+        
+        .empty-state .icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        
+        @media (max-width: 768px) {
+            .audit-container {
+                padding: 1rem;
+            }
+            
+            .audit-table {
+                overflow-x: auto;
+            }
+            
+            .audit-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="audit-container">
+        <!-- Заголовок -->
+        <div class="audit-header">
+            <h1>📋 История моих действий</h1>
+            <p>Полный журнал ваших действий в системе</p>
+        </div>
+        
+        <!-- Статистика -->
+        <div class="audit-stats">
+            <div class="stat-card">
+                <div class="stat-number" th:text="${totalElements}">0</div>
+                <div class="stat-label">Всего действий</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" th:text="${recentActions.size()}">0</div>
+                <div class="stat-label">За последнее время</div>
+            </div>
+        </div>
+        
+        <!-- Последние действия -->
+        <div th:if="${!recentActions.isEmpty()}" class="recent-actions">
+            <h3>🕒 Последние действия</h3>
+            <div th:each="action : ${recentActions}" class="recent-item">
+                <div>
+                    <span class="action-badge" th:classappend="'action-' + ${action.action.toLowerCase()}" th:text="${action.action}">ACTION</span>
+                    <span th:text="${action.description}">Описание действия</span>
+                </div>
+                <div>
+                    <small th:text="${#temporals.format(action.createdAt, 'dd.MM.yyyy HH:mm')}">01.01.2024 12:00</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Фильтры -->
+        <div class="filters">
+            <form method="get">
+                <div class="filter-group">
+                    <label for="action">Тип действия:</label>
+                    <select name="action" id="action">
+                        <option value="">Все действия</option>
+                        <option value="LOGIN" th:selected="${currentAction == 'LOGIN'}">Вход в систему</option>
+                        <option value="LOGOUT" th:selected="${currentAction == 'LOGOUT'}">Выход из системы</option>
+                        <option value="CREATE_CARD" th:selected="${currentAction == 'CREATE_CARD'}">Создание карты</option>
+                        <option value="BLOCK_CARD" th:selected="${currentAction == 'BLOCK_CARD'}">Блокировка карты</option>
+                        <option value="ACTIVATE_CARD" th:selected="${currentAction == 'ACTIVATE_CARD'}">Активация карты</option>
+                        <option value="DELETE_CARD" th:selected="${currentAction == 'DELETE_CARD'}">Удаление карты</option>
+                        <option value="TOPUP_CARD" th:selected="${currentAction == 'TOPUP_CARD'}">Пополнение карты</option>
+                        <option value="TRANSFER" th:selected="${currentAction == 'TRANSFER'}">Перевод</option>
+                        <option value="EXPORT_DATA" th:selected="${currentAction == 'EXPORT_DATA'}">Экспорт данных</option>
+                        <option value="VIEW_CARDS" th:selected="${currentAction == 'VIEW_CARDS'}">Просмотр карт</option>
+                        <option value="VIEW_TRANSFERS" th:selected="${currentAction == 'VIEW_TRANSFERS'}">Просмотр переводов</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Фильтровать</button>
+                <a href="/audit/my" class="btn btn-secondary">Сбросить</a>
+            </form>
+        </div>
+        
+        <!-- Таблица аудита -->
+        <div th:if="${!auditLogs.content.isEmpty()}" class="audit-table">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Дата и время</th>
+                        <th>Действие</th>
+                        <th>Описание</th>
+                        <th>IP адрес</th>
+                        <th>Статус</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="log : ${auditLogs.content}">
+                        <td th:text="${#temporals.format(log.createdAt, 'dd.MM.yyyy HH:mm:ss')}">01.01.2024 12:00:00</td>
+                        <td>
+                            <span class="action-badge" th:classappend="'action-' + ${log.action.toLowerCase()}" th:text="${log.action}">ACTION</span>
+                        </td>
+                        <td th:text="${log.description}">Описание действия</td>
+                        <td th:text="${log.ipAddress ?: 'N/A'}">192.168.1.1</td>
+                        <td>
+                            <span class="status-success" th:if="${log.status == 'SUCCESS'}" th:text="${log.status}">SUCCESS</span>
+                            <span class="status-failed" th:if="${log.status == 'FAILED'}" th:text="${log.status}">FAILED</span>
+                            <span class="status-error" th:if="${log.status == 'ERROR'}" th:text="${log.status}">ERROR</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Пустое состояние -->
+        <div th:if="${auditLogs.content.isEmpty()}" class="empty-state">
+            <div class="icon">📋</div>
+            <h3>Нет записей</h3>
+            <p>История действий пуста или не соответствует выбранным фильтрам</p>
+        </div>
+        
+        <!-- Пагинация -->
+        <div th:if="${totalPages > 1}" class="pagination">
+            <a th:if="${currentPage > 0}" 
+               th:href="@{/audit/my(page=${currentPage - 1}, action=${currentAction})}" 
+               class="btn btn-secondary">← Предыдущая</a>
+            
+            <span>Страница <span th:text="${currentPage + 1}"></span> из <span th:text="${totalPages}"></span></span>
+            
+            <a th:if="${currentPage < totalPages - 1}" 
+               th:href="@{/audit/my(page=${currentPage + 1}, action=${currentAction})}" 
+               class="btn btn-secondary">Следующая →</a>
+        </div>
+        
+        <!-- Действия -->
+        <div style="text-align: center; margin-top: 2rem;">
+            <a href="/" class="btn btn-primary">🏠 Главная</a>
+            <a href="/cards" class="btn btn-secondary">💳 Мои карты</a>
+            <a href="/transfers" class="btn btn-secondary">💸 Переводы</a>
+        </div>
+    </div>
+</body>
+</html>

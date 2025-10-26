@@ -63,6 +63,11 @@
                 <button type="submit" class="btn btn-primary">🔍 Применить</button>
                 <a href="/users" class="btn btn-secondary">🔄 Сбросить</a>
             </form>
+            
+            <!-- Кнопки экспорта -->
+            <div class="export-section">
+                <button type="button" class="btn btn-export" onclick="showExportModal('users')">📊 Экспорт пользователей</button>
+            </div>
         </div>
         
         <!-- Список пользователей -->
@@ -202,5 +207,8 @@
             );
         }
     </script>
+    
+    <!-- Подключаем JavaScript для экспорта -->
+    <script th:src="@{/js/admin-export.js}"></script>
 </body>
 </html>

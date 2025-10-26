@@ -38,6 +38,9 @@ public class BankCardService {
     
     @Autowired
     private ValidationUtils validationUtils;
+    
+    @Autowired
+    private AuditService auditService;
 
     /**
      * Создает новую банковскую карту (только для админа)
@@ -80,6 +83,10 @@ public class BankCardService {
         );
 
         BankCard savedCard = bankCardRepository.save(bankCard);
+        
+        // Логируем создание карты
+        auditService.logCardCreation(owner, savedCard.getId(), maskedNumber);
+        
         return BankCardDto.fromEntity(savedCard);
     }
 
@@ -95,8 +102,11 @@ public class BankCardService {
     /**
      * Находит все карты пользователя
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public Page<BankCardDto> findByOwner(User owner, Pageable pageable) {
+        // Сначала обновляем статус истекших карт
+        updateExpiredCards();
+        
         return bankCardRepository.findByOwner(owner, pageable)
                 .map(BankCardDto::fromEntity);
     }
@@ -104,8 +114,11 @@ public class BankCardService {
     /**
      * Находит все карты пользователя с фильтрацией
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public Page<BankCardDto> findByOwnerWithFilters(User owner, BankCard.Status status, String searchTerm, Pageable pageable) {
+        // Сначала обновляем статус истекших карт
+        updateExpiredCards();
+        
         return bankCardRepository.findByOwnerWithFilters(owner, status, searchTerm, pageable)
                 .map(BankCardDto::fromEntity);
     }
@@ -113,8 +126,11 @@ public class BankCardService {
     /**
      * Находит все карты с фильтрацией (для админа)
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public Page<BankCardDto> findAllWithFilters(BankCard.Status status, String searchTerm, Pageable pageable) {
+        // Сначала обновляем статус истекших карт
+        updateExpiredCards();
+        
         return bankCardRepository.findAllWithFilters(status, searchTerm, pageable)
                 .map(BankCardDto::fromEntity);
     }
@@ -136,6 +152,10 @@ public class BankCardService {
 
         card.block(reason);
         BankCard savedCard = bankCardRepository.save(card);
+        
+        // Логируем блокировку карты
+        auditService.logCardBlock(savedCard.getOwner(), savedCard.getId(), savedCard.getMaskedNumber(), reason);
+        
         return BankCardDto.fromEntity(savedCard);
     }
 
@@ -160,6 +180,9 @@ public class BankCardService {
             
             // Принудительно загружаем owner для избежания lazy loading проблем
             savedCard.getOwner().getEmail();
+            
+            // Логируем активацию карты
+            auditService.logCardActivation(savedCard.getOwner(), savedCard.getId(), savedCard.getMaskedNumber());
             
             return BankCardDto.fromEntity(savedCard);
         } catch (Exception e) {
@@ -198,32 +221,53 @@ public class BankCardService {
         // Валидация входных данных
         validationUtils.validateId(cardId, "карты");
         
-        if (!bankCardRepository.existsById(cardId)) {
-            throw new ResourceNotFoundException("Карта", cardId);
-        }
+        BankCard card = bankCardRepository.findById(cardId)
+                .orElseThrow(() -> new ResourceNotFoundException("Карта", cardId));
+        
+        // Сохраняем информацию для логирования перед удалением
+        String maskedNumber = card.getMaskedNumber();
+        User owner = card.getOwner();
+        
         bankCardRepository.deleteById(cardId);
+        
+        // Логируем удаление карты
+        auditService.logCardDeletion(owner, cardId, maskedNumber);
+    }
+    
+    /**
+     * Обновляет статус истекших карт на EXPIRED
+     * @return количество обновленных карт
+     */
+    @Transactional
+    public int updateExpiredCards() {
+        List<BankCard> expiredCards = bankCardRepository.findExpiredCards();
+        
+        if (expiredCards.isEmpty()) {
+            return 0;
+        }
+        
+        int updatedCount = 0;
+        for (BankCard card : expiredCards) {
+            card.setStatus(BankCard.Status.EXPIRED);
+            bankCardRepository.save(card);
+            updatedCount++;
+        }
+        
+        return updatedCount;
     }
 
     /**
      * Находит активные карты пользователя для переводов
      */
-    @Transactional(readOnly = true)
+    @Transactional
     public List<BankCardDto> findActiveCardsForUser(User user) {
+        // Сначала обновляем статус истекших карт
+        updateExpiredCards();
+        
         return bankCardRepository.findActiveCardsForUser(user)
                 .stream()
                 .map(BankCardDto::fromEntity)
                 .toList();
-    }
-
-    /**
-     * Обновляет статус истекших карт
-     */
-    public void updateExpiredCards() {
-        List<BankCard> expiredCards = bankCardRepository.findExpiredCards();
-        for (BankCard card : expiredCards) {
-            card.setStatus(BankCard.Status.EXPIRED);
-        }
-        bankCardRepository.saveAll(expiredCards);
     }
 
     /**
@@ -285,8 +329,11 @@ public class BankCardService {
         
         BigDecimal currentBalance = card.getBalance();
         card.setBalance(currentBalance.add(topupAmount));
+
+        BankCard savedCard = bankCardRepository.save(card);
         
-        bankCardRepository.save(card);
+        // Логируем пополнение карты
+        auditService.logCardTopup(savedCard.getOwner(), savedCard.getId(), savedCard.getMaskedNumber(), amount);
     }
     
     /**

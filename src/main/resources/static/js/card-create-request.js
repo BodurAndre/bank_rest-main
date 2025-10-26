@@ -6,6 +6,27 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeRequestCardButtons();
 });
 
+function generateExpiryDateOptions() {
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1; // getMonth() returns 0-11, so add 1
+    const currentYear = now.getFullYear();
+    
+    // Минимальное обслуживание 2 года
+    const startYear = currentYear + 2;
+    const endYear = startYear + 3; // Показываем 4 года вперед
+    
+    let options = '';
+    
+    for (let year = startYear; year <= endYear; year++) {
+        const shortYear = year.toString().slice(-2); // Последние 2 цифры года
+        const monthStr = currentMonth.toString().padStart(2, '0'); // Добавляем 0 если нужно
+        const yearsFromNow = year - currentYear;
+        options += `<option value="${monthStr}/${shortYear}">${monthStr}/${shortYear} (${yearsFromNow} ${yearsFromNow === 1 ? 'год' : yearsFromNow < 5 ? 'года' : 'лет'})</option>`;
+    }
+    
+    return options;
+}
+
 /**
  * Инициализация кнопок запроса создания карты
  */
@@ -44,10 +65,7 @@ function showCardCreateRequestModal() {
                     <label for="cardExpiryDate">Срок действия карты:</label>
                     <select id="cardExpiryDate" name="expiryDate" required>
                         <option value="">Выберите срок действия</option>
-                        <option value="12/26">12/26 (2 года)</option>
-                        <option value="12/27">12/27 (3 года)</option>
-                        <option value="12/28">12/28 (4 года)</option>
-                        <option value="12/29">12/29 (5 лет)</option>
+                        ${generateExpiryDateOptions()}
                     </select>
                 </div>
                 <p class="modal-info">

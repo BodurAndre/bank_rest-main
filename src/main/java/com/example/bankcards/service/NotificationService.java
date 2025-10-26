@@ -111,6 +111,31 @@ public class NotificationService {
         return notificationRepository.save(notification);
     }
     
+    @Transactional
+    public Notification createCardRecreateRequest(User user, BankCard expiredCard, String newExpiryDate) {
+        String title = "Запрос на пересоздание истекшей карты";
+        String message = String.format(
+            "Пользователь %s %s запросил пересоздание истекшей карты %s. " +
+            "Старый срок действия: %s, новый срок действия: %s",
+            user.getFirstName(),
+            user.getLastName(),
+            expiredCard.getMaskedNumber(),
+            expiredCard.getExpiryDate().format(java.time.format.DateTimeFormatter.ofPattern("MM/yy")),
+            newExpiryDate
+        );
+
+        Notification notification = new Notification();
+        notification.setUser(user);
+        notification.setCard(expiredCard);
+        notification.setType(Notification.Type.CARD_RECREATE_REQUEST);
+        notification.setTitle(title);
+        notification.setMessage(message);
+        notification.setNewExpiryDate(newExpiryDate);
+        notification.setCreatedAt(LocalDateTime.now());
+
+        return notificationRepository.save(notification);
+    }
+    
     /**
      * Создает уведомление об активации карты
      */

@@ -47,4 +47,19 @@ public interface UserRepository extends JpaRepository<User, Long> {
            "LOWER(u.email) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
            "CAST(u.id AS string) LIKE CONCAT('%', :query, '%')")
     Page<User> searchUsersWithPagination(@Param("query") String query, Pageable pageable);
+
+    /**
+     * Находит пользователей по роли
+     */
+    List<User> findByRole(User.Role role);
+
+    /**
+     * Находит пользователей по роли и email (содержит)
+     */
+    List<User> findByRoleAndEmailContainingIgnoreCase(User.Role role, String email);
+
+    /**
+     * Находит пользователей по email (содержит)
+     */
+    List<User> findByEmailContainingIgnoreCase(String email);
 }

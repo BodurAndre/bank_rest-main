@@ -43,6 +43,11 @@
                 <button type="submit" class="btn btn-filter">Фильтровать</button>
                 <a href="/cards/admin" class="btn btn-clear">Очистить</a>
             </form>
+            
+            <!-- Кнопки экспорта -->
+            <div class="export-section">
+                <button type="button" class="btn btn-export" onclick="showExportModal('cards')">📊 Экспорт данных</button>
+            </div>
         </div>
         
         <!-- Список карт -->
@@ -80,11 +85,6 @@
                 </div>
                 
                 <div class="card-actions admin-actions">
-                    <button class="btn btn-sm btn-success topup-btn" 
-                            th:data-card-id="${card.id}" 
-                            th:data-card-number="${card.maskedNumber}" 
-                            th:data-card-balance="${card.balance}">💰 Пополнить</button>
-                    
                     <!-- Скрытые поля для отладки -->
                     <div class="hidden-card-data" style="display: none;">
                         <span class="card-id" th:text="${card.id}"></span>
@@ -92,17 +92,32 @@
                         <span class="card-balance" th:text="${card.balance}"></span>
                     </div>
                     
+                    <!-- Кнопки для активных карт -->
                     <div th:if="${card.status.name() == 'ACTIVE'}" class="action-group">
+                        <button class="btn btn-sm btn-success topup-btn" 
+                                th:data-card-id="${card.id}" 
+                                th:data-card-number="${card.maskedNumber}" 
+                                th:data-card-balance="${card.balance}">💰 Пополнить</button>
                         <button type="button" class="btn btn-sm btn-warning block-btn" 
                                 th:data-card-id="${card.id}"
                                 th:data-reason="'Блокировка администратором'">Заблокировать</button>
                     </div>
                     
+                    <!-- Кнопки для заблокированных карт -->
                     <div th:if="${card.status.name() == 'BLOCKED'}" class="action-group">
                         <button type="button" class="btn btn-sm btn-success activate-btn" 
                                 th:data-card-id="${card.id}">Активировать</button>
                     </div>
                     
+                    <!-- Кнопки для истекших карт -->
+                    <div th:if="${card.status.name() == 'EXPIRED'}" class="action-group">
+                        <button type="button" class="btn btn-sm btn-warning admin-recreate-card-btn" 
+                                th:data-card-id="${card.id}" 
+                                th:data-card-number="${card.maskedNumber}"
+                                th:data-owner-email="${card.ownerEmail}">🔄 Пересоздать карту</button>
+                    </div>
+                    
+                    <!-- Кнопка удаления для всех карт -->
                     <div class="action-group">
                         <button type="button" class="btn btn-sm btn-danger delete-btn" 
                                 th:data-card-id="${card.id}">Удалить</button>
@@ -169,6 +184,7 @@
 
     <script th:src="@{/js/cards.js}"></script>
     <script th:src="@{/js/card-actions.js}"></script>
+    <script th:src="@{/js/admin-card-recreate.js}"></script>
     
     <script>
         // Обработка статусных уведомлений
@@ -187,5 +203,8 @@
             }
         });
     </script>
+    
+    <!-- Подключаем JavaScript для экспорта -->
+    <script th:src="@{/js/admin-export.js}"></script>
 </body>
 </html>

@@ -35,6 +35,9 @@ public class TransferService {
     
     @Autowired
     private ValidationUtils validationUtils;
+    
+    @Autowired
+    private AuditService auditService;
 
     /**
      * Выполняет перевод между картами
@@ -94,6 +97,10 @@ public class TransferService {
             transfer.setStatus(Transfer.Status.COMPLETED);
             transfer.setProcessedAt(LocalDateTime.now());
             transfer = transferRepository.save(transfer);
+
+            // Логируем успешный перевод
+            auditService.logTransfer(user, transfer.getId(), fromCard.getMaskedNumber(), 
+                                   toCard.getMaskedNumber(), request.getAmount().doubleValue());
 
             return createTransferResponse(transfer);
 

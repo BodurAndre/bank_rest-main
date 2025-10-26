@@ -45,6 +45,12 @@
                 <button type="submit" class="btn btn-filter">Фильтровать</button>
                 <a href="/cards" class="btn btn-clear">Очистить</a>
             </form>
+            
+            <!-- Кнопки экспорта -->
+            <div th:if="${!cards.content.isEmpty()}" class="export-section" style="margin-top: 1rem; text-align: center;">
+                <a href="/api/export/cards/csv" class="btn btn-success" style="margin: 0 5px;">📊 Экспорт (CSV)</a>
+                <a href="/api/export/cards/pdf" class="btn btn-primary" style="margin: 0 5px;">📄 Экспорт (PDF)</a>
+            </div>
         </div>
         
         <!-- Список карт -->
@@ -89,6 +95,16 @@
                     <button th:if="${card.status.name() == 'ACTIVE' && card.blockRequestSent != null && card.blockRequestSent}" 
                             type="button" class="btn btn-sm btn-secondary" 
                             disabled>Запрос на блокировку отправлен</button>
+                    
+                    <!-- Кнопка для пересоздания истекшей карты -->
+                    <button th:if="${card.status.name() == 'EXPIRED'}" 
+                            type="button" class="btn btn-sm btn-warning recreate-card-btn" 
+                            th:data-card-id="${card.id}" 
+                            th:data-card-number="${card.maskedNumber}">🔄 Пересоздать карту</button>
+                    
+                    <button th:if="${card.status.name() == 'EXPIRED'}" 
+                            type="button" class="btn btn-sm btn-secondary" 
+                            disabled>Срок действия истек</button>
                     
                     <!-- Скрытые поля для отладки -->
                     <div class="hidden-card-data" style="display: none;">
@@ -195,5 +211,6 @@
         });
     </script>
     <script th:src="@{/js/card-create-request.js}"></script>
+    <script th:src="@{/js/card-recreate-request.js}"></script>
 </body>
 </html>
