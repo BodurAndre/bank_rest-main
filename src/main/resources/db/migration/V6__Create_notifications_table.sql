@@ -1,20 +1,21 @@
 -- Создание таблицы уведомлений
 CREATE TABLE notifications (
-    id BIGSERIAL PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT NOT NULL,
     card_id BIGINT NOT NULL,
-    type VARCHAR(50) NOT NULL,
+    type VARCHAR(100) NOT NULL,
     title VARCHAR(255) NOT NULL,
     message TEXT NOT NULL,
     is_read BOOLEAN NOT NULL DEFAULT FALSE,
     is_processed BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    read_at TIMESTAMP,
-    processed_at TIMESTAMP,
+    read_at TIMESTAMP NULL,
+    processed_at TIMESTAMP NULL,
+    amount DECIMAL(10,2) NULL,
     
     CONSTRAINT fk_notifications_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT fk_notifications_card FOREIGN KEY (card_id) REFERENCES bank_cards(id) ON DELETE CASCADE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Создание индексов для оптимизации запросов
 CREATE INDEX idx_notifications_user_created ON notifications(user_id, created_at DESC);

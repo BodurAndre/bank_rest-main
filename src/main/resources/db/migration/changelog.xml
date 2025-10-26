@@ -28,21 +28,17 @@
     <changeSet id="6" author="system">
         <sqlFile path="V6__Create_notifications_table.sql" relativeToChangelogFile="true"/>
     </changeSet>
-
+    
     <changeSet id="7" author="system">
         <sqlFile path="V7__Add_block_request_sent_to_bank_cards.sql" relativeToChangelogFile="true"/>
     </changeSet>
     
-    <changeSet id="8" author="system">
-        <sqlFile path="V8__Add_amount_to_notifications.sql" relativeToChangelogFile="true"/>
+    <changeSet id="11" author="system">
+        <sqlFile path="V11__Encrypt_existing_card_numbers.sql" relativeToChangelogFile="true"/>
     </changeSet>
     
-    <changeSet id="9" author="system">
-        <sqlFile path="V9__Update_existing_notifications_amount.sql" relativeToChangelogFile="true"/>
-    </changeSet>
-    
-    <changeSet id="10" author="system">
-        <sqlFile path="V10__Increase_notifications_type_size.sql" relativeToChangelogFile="true"/>
+    <changeSet id="12" author="system">
+        <sqlFile path="V12__Reset_default_users.sql" relativeToChangelogFile="true"/>
     </changeSet>
 
 </databaseChangeLog>

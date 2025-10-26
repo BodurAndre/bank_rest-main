@@ -6,6 +6,7 @@ import com.example.bankcards.entity.BankCard;
 import com.example.bankcards.entity.User;
 import com.example.bankcards.repository.BankCardRepository;
 import com.example.bankcards.repository.UserRepository;
+import com.example.bankcards.util.CardEncryptionUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -29,6 +30,9 @@ public class BankCardService {
 
     @Autowired
     private UserRepository userRepository;
+    
+    @Autowired
+    private CardEncryptionUtil cardEncryptionUtil;
 
     /**
      * Создает новую банковскую карту (только для админа)
@@ -38,18 +42,29 @@ public class BankCardService {
         User owner = userRepository.findByEmail(request.getOwnerEmail())
                 .orElseThrow(() -> new IllegalArgumentException("Пользователь не найден"));
 
-        // Генерируем номер карты и маскированный номер
+        // Генерируем номер карты
         String cardNumber = generateCardNumber();
-        String maskedNumber = maskCardNumber(cardNumber);
+        
+        // Проверяем валидность номера по алгоритму Луна
+        if (!cardEncryptionUtil.isValidCardNumber(cardNumber)) {
+            // Если номер невалидный, генерируем новый
+            cardNumber = generateValidCardNumber();
+        }
+        
+        // Шифруем номер карты
+        String encryptedCardNumber = cardEncryptionUtil.encryptCardNumber(cardNumber);
+        
+        // Генерируем маскированный номер
+        String maskedNumber = cardEncryptionUtil.getMaskedNumberFromEncrypted(encryptedCardNumber);
 
-        // Проверяем уникальность
-        if (bankCardRepository.existsByCardNumber(cardNumber)) {
+        // Проверяем уникальность зашифрованного номера
+        if (bankCardRepository.existsByCardNumber(encryptedCardNumber)) {
             throw new IllegalArgumentException("Карта с таким номером уже существует");
         }
 
-        // Создаем карту
+        // Создаем карту с зашифрованным номером
         BankCard bankCard = new BankCard(
-                cardNumber,
+                encryptedCardNumber,
                 maskedNumber,
                 owner,
                 request.getExpiryDateAsLocalDate()
@@ -202,15 +217,26 @@ public class BankCardService {
         }
         return cardNumber.toString();
     }
-
+    
     /**
-     * Маскирует номер карты (показывает только последние 4 цифры)
+     * Генерирует валидный номер карты по алгоритму Луна
      */
-    private String maskCardNumber(String cardNumber) {
-        if (cardNumber.length() < 4) {
-            return "****";
+    private String generateValidCardNumber() {
+        String cardNumber;
+        int attempts = 0;
+        int maxAttempts = 100;
+        
+        do {
+            cardNumber = generateCardNumber();
+            attempts++;
+        } while (!cardEncryptionUtil.isValidCardNumber(cardNumber) && attempts < maxAttempts);
+        
+        if (attempts >= maxAttempts) {
+            // Если не удалось сгенерировать валидный номер, используем фиксированный
+            cardNumber = "4532015112830366"; // Валидный номер для тестирования
         }
-        return "**** **** **** " + cardNumber.substring(cardNumber.length() - 4);
+        
+        return cardNumber;
     }
 
     /**
