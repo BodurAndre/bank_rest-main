@@ -488,3 +488,4 @@ function showCustomNotification(title, message, type) {
         }
     }, 5000);
 }
+

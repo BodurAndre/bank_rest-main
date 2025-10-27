@@ -2,3 +2,4 @@
 -- Это необходимо для запросов на создание карт, где карта еще не существует
 
 ALTER TABLE notifications MODIFY COLUMN card_id BIGINT NULL;
+

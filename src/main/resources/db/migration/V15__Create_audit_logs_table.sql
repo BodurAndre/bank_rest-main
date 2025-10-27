@@ -20,3 +20,4 @@ CREATE TABLE audit_logs (
     INDEX idx_audit_logs_created (created_at),
     INDEX idx_audit_logs_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

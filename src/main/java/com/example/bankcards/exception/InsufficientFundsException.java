@@ -25,3 +25,4 @@ public class InsufficientFundsException extends BusinessException {
         return requestedAmount;
     }
 }
+

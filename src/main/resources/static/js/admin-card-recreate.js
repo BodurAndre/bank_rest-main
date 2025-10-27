@@ -229,3 +229,4 @@ function closeAdminConfirmModal() {
         }, 300);
     }
 }
+

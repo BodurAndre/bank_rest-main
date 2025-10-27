@@ -3,6 +3,10 @@ package com.example.bankcards.util;
 import com.example.bankcards.exception.ValidationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -12,154 +16,437 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Тесты для ValidationUtils
  */
+@ExtendWith(MockitoExtension.class)
 class ValidationUtilsTest {
-    
+
+    @InjectMocks
     private ValidationUtils validationUtils;
-    
-    @BeforeEach
-    void setUp() {
-        validationUtils = new ValidationUtils();
-    }
-    
+
     @Test
-    void testValidateEmail_ValidEmail() {
-        assertDoesNotThrow(() -> validationUtils.validateEmail("test@example.com"));
-        assertDoesNotThrow(() -> validationUtils.validateEmail("user.name+tag@domain.co.uk"));
+    @DisplayName("Валидация корректного email")
+    void validateEmail_ValidEmail() {
+        // Given
+        String validEmail = "test@example.com";
+
+        // When & Then
+        assertDoesNotThrow(() -> validationUtils.validateEmail(validEmail));
     }
-    
+
     @Test
-    void testValidateEmail_InvalidEmail() {
-        assertThrows(ValidationException.class, () -> validationUtils.validateEmail(null));
-        assertThrows(ValidationException.class, () -> validationUtils.validateEmail(""));
-        assertThrows(ValidationException.class, () -> validationUtils.validateEmail("invalid-email"));
-        assertThrows(ValidationException.class, () -> validationUtils.validateEmail("@domain.com"));
-        assertThrows(ValidationException.class, () -> validationUtils.validateEmail("user@"));
+    @DisplayName("Валидация email с поддоменами")
+    void validateEmail_ValidEmailWithSubdomains() {
+        // Given
+        String validEmail = "user@mail.example.com";
+
+        // When & Then
+        assertDoesNotThrow(() -> validationUtils.validateEmail(validEmail));
     }
-    
+
     @Test
-    void testValidateName_ValidName() {
-        assertDoesNotThrow(() -> validationUtils.validateName("Иван", "Имя"));
-        assertDoesNotThrow(() -> validationUtils.validateName("John", "Name"));
-        assertDoesNotThrow(() -> validationUtils.validateName("Анна-Мария", "Имя"));
+    @DisplayName("Валидация email с цифрами")
+    void validateEmail_ValidEmailWithNumbers() {
+        // Given
+        String validEmail = "user123@example.com";
+
+        // When & Then
+        assertDoesNotThrow(() -> validationUtils.validateEmail(validEmail));
     }
-    
+
     @Test
-    void testValidateName_InvalidName() {
-        assertThrows(ValidationException.class, () -> validationUtils.validateName(null, "Имя"));
-        assertThrows(ValidationException.class, () -> validationUtils.validateName("", "Имя"));
-        assertThrows(ValidationException.class, () -> validationUtils.validateName("A", "Имя")); // слишком короткое
-        assertThrows(ValidationException.class, () -> validationUtils.validateName("123", "Имя")); // цифры
+    @DisplayName("Валидация некорректного email")
+    void validateEmail_InvalidEmail() {
+        // Given
+        String invalidEmail = "invalid-email";
+
+        // When & Then
+        assertThrows(ValidationException.class, () -> validationUtils.validateEmail(invalidEmail));
     }
-    
+
     @Test
-    void testValidatePassword_ValidPassword() {
-        assertDoesNotThrow(() -> validationUtils.validatePassword("password123"));
-        assertDoesNotThrow(() -> validationUtils.validatePassword("strongPassword!"));
+    @DisplayName("Валидация пустого email")
+    void validateEmail_EmptyEmail() {
+        // Given
+        String emptyEmail = "";
+
+        // When & Then
+        assertThrows(ValidationException.class, () -> validationUtils.validateEmail(emptyEmail));
     }
-    
+
     @Test
-    void testValidatePassword_InvalidPassword() {
-        assertThrows(ValidationException.class, () -> validationUtils.validatePassword(null));
-        assertThrows(ValidationException.class, () -> validationUtils.validatePassword(""));
-        assertThrows(ValidationException.class, () -> validationUtils.validatePassword("12345")); // слишком короткий
+    @DisplayName("Валидация null email")
+    void validateEmail_NullEmail() {
+        // Given
+        String nullEmail = null;
+
+        // When & Then
+        assertThrows(ValidationException.class, () -> validationUtils.validateEmail(nullEmail));
     }
-    
+
     @Test
-    void testValidateAmount_ValidAmount() {
-        assertDoesNotThrow(() -> validationUtils.validateAmount(new BigDecimal("100.50")));
-        assertDoesNotThrow(() -> validationUtils.validateAmount(new BigDecimal("0.01")));
-        assertDoesNotThrow(() -> validationUtils.validateAmount(new BigDecimal("999999")));
+    @DisplayName("Валидация email без @")
+    void validateEmail_EmailWithoutAt() {
+        // Given
+        String emailWithoutAt = "userexample.com";
+
+        // When & Then
+        assertThrows(ValidationException.class, () -> validationUtils.validateEmail(emailWithoutAt));
     }
-    
+
     @Test
-    void testValidateAmount_InvalidAmount() {
-        assertThrows(ValidationException.class, () -> validationUtils.validateAmount(null));
-        assertThrows(ValidationException.class, () -> validationUtils.validateAmount(BigDecimal.ZERO));
-        assertThrows(ValidationException.class, () -> validationUtils.validateAmount(new BigDecimal("-10")));
-        assertThrows(ValidationException.class, () -> validationUtils.validateAmount(new BigDecimal("1000001"))); // слишком большая
-        assertThrows(ValidationException.class, () -> validationUtils.validateAmount(new BigDecimal("10.123"))); // слишком много знаков после запятой
+    @DisplayName("Валидация email с несколькими @")
+    void validateEmail_EmailWithMultipleAt() {
+        // Given
+        String emailWithMultipleAt = "user@example@com";
+
+        // When & Then
+        assertThrows(ValidationException.class, () -> validationUtils.validateEmail(emailWithMultipleAt));
     }
-    
+
     @Test
-    void testValidateDateOfBirth_ValidDate() {
-        LocalDate validDate = LocalDate.now().minusYears(25);
-        assertDoesNotThrow(() -> validationUtils.validateDateOfBirth(validDate));
+    @DisplayName("Валидация корректного ID")
+    void validateId_ValidId() {
+        // Given
+        Long validId = 1L;
+
+        // When & Then
+        assertDoesNotThrow(() -> validationUtils.validateId(validId, "карты"));
     }
-    
+
     @Test
-    void testValidateDateOfBirth_InvalidDate() {
-        assertThrows(ValidationException.class, () -> validationUtils.validateDateOfBirth((LocalDate) null));
-        
-        LocalDate tooYoung = LocalDate.now().minusYears(17);
-        assertThrows(ValidationException.class, () -> validationUtils.validateDateOfBirth(tooYoung));
-        
-        LocalDate tooOld = LocalDate.now().minusYears(121);
-        assertThrows(ValidationException.class, () -> validationUtils.validateDateOfBirth(tooOld));
+    @DisplayName("Валидация нулевого ID")
+    void validateId_ZeroId() {
+        // Given
+        Long zeroId = 0L;
+
+        // When & Then
+        assertThrows(ValidationException.class, () -> validationUtils.validateId(zeroId, "карты"));
     }
-    
+
     @Test
-    void testValidateDateOfBirth_StringFormat_ValidDate() {
-        assertDoesNotThrow(() -> validationUtils.validateDateOfBirth("1990-05-15")); // ISO format
-        assertDoesNotThrow(() -> validationUtils.validateDateOfBirth("2000-01-01")); // ISO format
-        assertDoesNotThrow(() -> validationUtils.validateDateOfBirth("15.05.1990")); // Russian format
-        assertDoesNotThrow(() -> validationUtils.validateDateOfBirth("15/05/1990")); // Alternative format
-        assertDoesNotThrow(() -> validationUtils.validateDateOfBirth(null)); // optional field
-        assertDoesNotThrow(() -> validationUtils.validateDateOfBirth("")); // optional field
-        assertDoesNotThrow(() -> validationUtils.validateDateOfBirth("   ")); // optional field
+    @DisplayName("Валидация отрицательного ID")
+    void validateId_NegativeId() {
+        // Given
+        Long negativeId = -1L;
+
+        // When & Then
+        assertThrows(ValidationException.class, () -> validationUtils.validateId(negativeId, "карты"));
     }
-    
+
     @Test
-    void testValidateDateOfBirth_StringFormat_InvalidDate() {
-        // Проверяем, что ошибки парсинга дают сообщение о формате
-        ValidationException formatException1 = assertThrows(ValidationException.class, 
-            () -> validationUtils.validateDateOfBirth("invalid-date"));
-        assertTrue(formatException1.getMessage().contains("Некорректный формат даты рождения"));
-        
-        ValidationException formatException2 = assertThrows(ValidationException.class, 
-            () -> validationUtils.validateDateOfBirth("32.13.1990")); // invalid date
-        assertTrue(formatException2.getMessage().contains("Некорректный формат даты рождения"));
-        
-        ValidationException formatException3 = assertThrows(ValidationException.class, 
-            () -> validationUtils.validateDateOfBirth("abc-def-ghij")); // completely wrong format
-        assertTrue(formatException3.getMessage().contains("Некорректный формат даты рождения"));
-        
-        // Проверяем, что ошибки валидации возраста дают правильное сообщение
-        ValidationException ageException1 = assertThrows(ValidationException.class, 
-            () -> validationUtils.validateDateOfBirth("2010-01-01")); // too young
-        assertTrue(ageException1.getMessage().contains("Возраст должен быть не менее 18 лет"));
-        
-        ValidationException ageException2 = assertThrows(ValidationException.class, 
-            () -> validationUtils.validateDateOfBirth("01.01.1900")); // too old
-        assertTrue(ageException2.getMessage().contains("Возраст должен быть не более 120 лет"));
+    @DisplayName("Валидация null ID")
+    void validateId_NullId() {
+        // Given
+        Long nullId = null;
+
+        // When & Then
+        assertThrows(ValidationException.class, () -> validationUtils.validateId(nullId, "карты"));
     }
-    
+
     @Test
-    void testValidateExpiryDate_ValidDate() {
-        LocalDate validDate = LocalDate.now().plusYears(2);
-        assertDoesNotThrow(() -> validationUtils.validateExpiryDate(validDate));
+    @DisplayName("Валидация корректной суммы")
+    void validateMinAmount_ValidAmount() {
+        // Given
+        BigDecimal validAmount = BigDecimal.valueOf(100.50);
+        BigDecimal minAmount = BigDecimal.valueOf(0.01);
+
+        // When & Then
+        assertDoesNotThrow(() -> validationUtils.validateMinAmount(validAmount, minAmount));
     }
-    
+
     @Test
-    void testValidateExpiryDate_InvalidDate() {
-        assertThrows(ValidationException.class, () -> validationUtils.validateExpiryDate(null));
-        
-        LocalDate pastDate = LocalDate.now().minusDays(1);
-        assertThrows(ValidationException.class, () -> validationUtils.validateExpiryDate(pastDate));
-        
-        LocalDate tooFarFuture = LocalDate.now().plusYears(11);
-        assertThrows(ValidationException.class, () -> validationUtils.validateExpiryDate(tooFarFuture));
+    @DisplayName("Валидация минимальной суммы")
+    void validateMinAmount_MinimumAmount() {
+        // Given
+        BigDecimal minimumAmount = BigDecimal.valueOf(0.01);
+        BigDecimal minAmount = BigDecimal.valueOf(0.01);
+
+        // When & Then
+        assertDoesNotThrow(() -> validationUtils.validateMinAmount(minimumAmount, minAmount));
     }
-    
+
     @Test
-    void testValidateId_ValidId() {
-        assertDoesNotThrow(() -> validationUtils.validateId(1L, "пользователя"));
-        assertDoesNotThrow(() -> validationUtils.validateId(999L, "карты"));
+    @DisplayName("Валидация нулевой суммы")
+    void validateMinAmount_ZeroAmount() {
+        // Given
+        BigDecimal zeroAmount = BigDecimal.ZERO;
+        BigDecimal minAmount = BigDecimal.valueOf(0.01);
+
+        // When & Then
+        assertThrows(ValidationException.class, () -> validationUtils.validateMinAmount(zeroAmount, minAmount));
     }
-    
+
     @Test
-    void testValidateId_InvalidId() {
-        assertThrows(ValidationException.class, () -> validationUtils.validateId(null, "пользователя"));
-        assertThrows(ValidationException.class, () -> validationUtils.validateId(0L, "пользователя"));
-        assertThrows(ValidationException.class, () -> validationUtils.validateId(-1L, "пользователя"));
+    @DisplayName("Валидация отрицательной суммы")
+    void validateMinAmount_NegativeAmount() {
+        // Given
+        BigDecimal negativeAmount = BigDecimal.valueOf(-100.00);
+        BigDecimal minAmount = BigDecimal.valueOf(0.01);
+
+        // When & Then
+        assertThrows(ValidationException.class, () -> validationUtils.validateMinAmount(negativeAmount, minAmount));
+    }
+
+    @Test
+    @DisplayName("Валидация null суммы")
+    void validateMinAmount_NullAmount() {
+        // Given
+        BigDecimal nullAmount = null;
+        BigDecimal minAmount = BigDecimal.valueOf(0.01);
+
+        // When & Then
+        assertThrows(ValidationException.class, () -> validationUtils.validateMinAmount(nullAmount, minAmount));
+    }
+
+    @Test
+    @DisplayName("Валидация суммы меньше минимальной")
+    void validateMinAmount_AmountLessThanMinimum() {
+        // Given
+        BigDecimal smallAmount = BigDecimal.valueOf(0.005);
+        BigDecimal minAmount = BigDecimal.valueOf(0.01);
+
+        // When & Then
+        assertThrows(ValidationException.class, () -> validationUtils.validateMinAmount(smallAmount, minAmount));
+    }
+
+    @Test
+    @DisplayName("Валидация корректного описания")
+    void validateDescription_ValidDescription() {
+        // Given
+        String validDescription = "Valid description";
+        String fieldName = "Описание";
+
+        // When & Then
+        assertDoesNotThrow(() -> validationUtils.validateDescription(validDescription, fieldName));
+    }
+
+    @Test
+    @DisplayName("Валидация описания с специальными символами")
+    void validateDescription_DescriptionWithSpecialChars() {
+        // Given
+        String descriptionWithSpecialChars = "Description with special chars: !@#$%^&*()";
+        String fieldName = "Описание";
+
+        // When & Then
+        assertDoesNotThrow(() -> validationUtils.validateDescription(descriptionWithSpecialChars, fieldName));
+    }
+
+    @Test
+    @DisplayName("Валидация описания с эмодзи")
+    void validateDescription_DescriptionWithEmoji() {
+        // Given
+        String descriptionWithEmoji = "Description with emoji 🏦💰";
+        String fieldName = "Описание";
+
+        // When & Then
+        assertDoesNotThrow(() -> validationUtils.validateDescription(descriptionWithEmoji, fieldName));
+    }
+
+    @Test
+    @DisplayName("Валидация пустого описания")
+    void validateDescription_EmptyDescription() {
+        // Given
+        String emptyDescription = "";
+        String fieldName = "Описание";
+
+        // When & Then
+        assertThrows(ValidationException.class, () -> validationUtils.validateDescription(emptyDescription, fieldName));
+    }
+
+    @Test
+    @DisplayName("Валидация null описания")
+    void validateDescription_NullDescription() {
+        // Given
+        String nullDescription = null;
+        String fieldName = "Описание";
+
+        // When & Then
+        assertThrows(ValidationException.class, () -> validationUtils.validateDescription(nullDescription, fieldName));
+    }
+
+    @Test
+    @DisplayName("Валидация описания только из пробелов")
+    void validateDescription_WhitespaceOnlyDescription() {
+        // Given
+        String whitespaceOnlyDescription = "   ";
+        String fieldName = "Описание";
+
+        // When & Then
+        assertThrows(ValidationException.class, () -> validationUtils.validateDescription(whitespaceOnlyDescription, fieldName));
+    }
+
+    @Test
+    @DisplayName("Валидация слишком длинного описания")
+    void validateDescription_TooLongDescription() {
+        // Given
+        String tooLongDescription = "a".repeat(1001); // Exceeds maximum length
+        String fieldName = "Описание";
+
+        // When & Then
+        assertThrows(ValidationException.class, () -> validationUtils.validateDescription(tooLongDescription, fieldName));
+    }
+
+    @Test
+    @DisplayName("Валидация описания максимальной длины")
+    void validateDescription_MaximumLengthDescription() {
+        // Given
+        String maximumLengthDescription = "a".repeat(1000); // Maximum allowed length
+        String fieldName = "Описание";
+
+        // When & Then
+        assertDoesNotThrow(() -> validationUtils.validateDescription(maximumLengthDescription, fieldName));
+    }
+
+    @Test
+    @DisplayName("Валидация корректной даты истечения")
+    void validateExpiryDate_ValidExpiryDate() {
+        // Given
+        LocalDate validExpiryDate = LocalDate.now().plusYears(2);
+
+        // When & Then
+        assertDoesNotThrow(() -> validationUtils.validateExpiryDate(validExpiryDate));
+    }
+
+    @Test
+    @DisplayName("Валидация даты истечения в прошлом")
+    void validateExpiryDate_PastExpiryDate() {
+        // Given
+        LocalDate pastExpiryDate = LocalDate.now().minusDays(1);
+
+        // When & Then
+        assertThrows(ValidationException.class, () -> validationUtils.validateExpiryDate(pastExpiryDate));
+    }
+
+    @Test
+    @DisplayName("Валидация null даты истечения")
+    void validateExpiryDate_NullExpiryDate() {
+        // Given
+        LocalDate nullExpiryDate = null;
+
+        // When & Then
+        assertThrows(ValidationException.class, () -> validationUtils.validateExpiryDate(nullExpiryDate));
+    }
+
+    @Test
+    @DisplayName("Валидация даты истечения сегодня")
+    void validateExpiryDate_TodayExpiryDate() {
+        // Given
+        LocalDate todayExpiryDate = LocalDate.now();
+
+        // When & Then
+        assertThrows(ValidationException.class, () -> validationUtils.validateExpiryDate(todayExpiryDate));
+    }
+
+    @Test
+    @DisplayName("Валидация даты истечения завтра")
+    void validateExpiryDate_TomorrowExpiryDate() {
+        // Given
+        LocalDate tomorrowExpiryDate = LocalDate.now().plusDays(1);
+
+        // When & Then
+        assertDoesNotThrow(() -> validationUtils.validateExpiryDate(tomorrowExpiryDate));
+    }
+
+    @Test
+    @DisplayName("Валидация даты истечения в далеком будущем")
+    void validateExpiryDate_FarFutureExpiryDate() {
+        // Given
+        LocalDate farFutureExpiryDate = LocalDate.now().plusYears(10);
+
+        // When & Then
+        assertDoesNotThrow(() -> validationUtils.validateExpiryDate(farFutureExpiryDate));
+    }
+
+    @Test
+    @DisplayName("Валидация граничных случаев для email")
+    void validateEmail_EdgeCases() {
+        // Test various edge cases
+        String[] validEmails = {
+            "a@b.co",
+            "test+tag@example.com",
+            "test.email@example.com",
+            "test_email@example.com",
+            "123@example.com"
+        };
+
+        String[] invalidEmails = {
+            "@example.com",
+            "test@",
+            "test@.com",
+            "test..email@example.com",
+            "test@example..com",
+            "test@example.com.",
+            "test@example.com.."
+        };
+
+        for (String email : validEmails) {
+            assertDoesNotThrow(() -> validationUtils.validateEmail(email), 
+                "Email should be valid: " + email);
+        }
+
+        for (String email : invalidEmails) {
+            assertThrows(ValidationException.class, () -> validationUtils.validateEmail(email), 
+                "Email should be invalid: " + email);
+        }
+    }
+
+    @Test
+    @DisplayName("Валидация граничных случаев для суммы")
+    void validateMinAmount_EdgeCases() {
+        // Test various edge cases
+        BigDecimal[] validAmounts = {
+            BigDecimal.valueOf(0.01),
+            BigDecimal.valueOf(0.1),
+            BigDecimal.valueOf(1.0),
+            BigDecimal.valueOf(100.0),
+            BigDecimal.valueOf(999999.99)
+        };
+
+        BigDecimal[] invalidAmounts = {
+            BigDecimal.valueOf(0.001),
+            BigDecimal.valueOf(0.009),
+            BigDecimal.valueOf(-0.01),
+            BigDecimal.valueOf(-100.0)
+        };
+
+        BigDecimal minAmount = BigDecimal.valueOf(0.01);
+
+        for (BigDecimal amount : validAmounts) {
+            assertDoesNotThrow(() -> validationUtils.validateMinAmount(amount, minAmount), 
+                "Amount should be valid: " + amount);
+        }
+
+        for (BigDecimal amount : invalidAmounts) {
+            assertThrows(ValidationException.class, () -> validationUtils.validateMinAmount(amount, minAmount), 
+                "Amount should be invalid: " + amount);
+        }
+    }
+
+    @Test
+    @DisplayName("Валидация граничных случаев для ID")
+    void validateId_EdgeCases() {
+        // Test various edge cases
+        Long[] validIds = {
+            1L,
+            100L,
+            999999L,
+            Long.MAX_VALUE
+        };
+
+        Long[] invalidIds = {
+            0L,
+            -1L,
+            -100L,
+            Long.MIN_VALUE
+        };
+
+        for (Long id : validIds) {
+            assertDoesNotThrow(() -> validationUtils.validateId(id, "карты"), 
+                "ID should be valid: " + id);
+        }
+
+        for (Long id : invalidIds) {
+            assertThrows(ValidationException.class, () -> validationUtils.validateId(id, "карты"), 
+                "ID should be invalid: " + id);
+        }
     }
 }

@@ -78,3 +78,4 @@ public class CardExpirationSchedulerService {
         logger.debug("🧪 Тест планировщика: {}", LocalDateTime.now().format(formatter));
     }
 }
+

@@ -1,1 +1,1263 @@
-# Здесь будет OpenAPI описание всех доступных эндпоинтов и моделей данных.
+openapi: 3.0.3
+info:
+  title: Bank Cards Management API
+  description: |
+    REST API для управления банковскими картами, пользователями, переводами и аудитом.
+    
+    ## Основные возможности:
+    - Управление пользователями (регистрация, аутентификация, роли)
+    - Управление банковскими картами (создание, блокировка, пополнение)
+    - Переводы между картами пользователя
+    - Система уведомлений для администраторов
+    - Аудит действий пользователей
+    - Экспорт данных в CSV и PDF форматах
+    
+    ## Роли пользователей:
+    - **ADMIN**: Полный доступ ко всем операциям
+    - **USER**: Доступ только к своим картам и переводам
+    
+    ## Безопасность:
+    - JWT токены для аутентификации
+    - Шифрование номеров карт в базе данных
+    - Валидация данных на уровне сервисов
+    - Глобальная обработка ошибок
+  version: 1.0.0
+  contact:
+    name: Bank Cards API Support
+    email: support@bankcards.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8081
+    description: Development server
+  - url: https://api.bankcards.com
+    description: Production server
+
+security:
+  - BearerAuth: []
+
+paths:
+  # Аутентификация
+  /api/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Вход в систему
+      description: Аутентификация пользователя по email и паролю
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Успешная аутентификация
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Неверные учетные данные
+        '400':
+          description: Некорректные данные запроса
+
+  /api/auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Регистрация пользователя
+      description: Создание нового пользователя в системе
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Пользователь успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Некорректные данные или пользователь уже существует
+        '409':
+          description: Пользователь с таким email уже существует
+
+  # Управление картами
+  /api/cards:
+    get:
+      tags:
+        - Bank Cards
+      summary: Получить карты пользователя
+      description: Возвращает список банковских карт текущего пользователя
+      parameters:
+        - name: page
+          in: query
+          description: Номер страницы (начиная с 0)
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          description: Размер страницы
+          schema:
+            type: integer
+            default: 10
+        - name: status
+          in: query
+          description: Фильтр по статусу карты
+          schema:
+            $ref: '#/components/schemas/CardStatus'
+        - name: search
+          in: query
+          description: Поиск по номеру карты
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Список карт пользователя
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BankCardDto'
+                  totalElements:
+                    type: integer
+                  totalPages:
+                    type: integer
+                  currentPage:
+                    type: integer
+        '401':
+          description: Не авторизован
+
+    post:
+      tags:
+        - Bank Cards
+      summary: Создать новую карту
+      description: Создает новую банковскую карту для указанного пользователя (только для админов)
+      security:
+        - BearerAuth: [ADMIN]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBankCardRequest'
+      responses:
+        '201':
+          description: Карта успешно создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankCardDto'
+        '400':
+          description: Некорректные данные
+        '403':
+          description: Недостаточно прав
+        '404':
+          description: Пользователь не найден
+
+  /api/cards/{id}:
+    get:
+      tags:
+        - Bank Cards
+      summary: Получить карту по ID
+      description: Возвращает информацию о конкретной карте
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID карты
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Информация о карте
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankCardDto'
+        '404':
+          description: Карта не найдена
+        '403':
+          description: Нет доступа к карте
+
+    put:
+      tags:
+        - Bank Cards
+      summary: Обновить карту
+      description: Обновляет информацию о карте
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID карты
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BankCardDto'
+      responses:
+        '200':
+          description: Карта успешно обновлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankCardDto'
+        '404':
+          description: Карта не найдена
+        '403':
+          description: Нет доступа к карте
+
+    delete:
+      tags:
+        - Bank Cards
+      summary: Удалить карту
+      description: Удаляет карту (только для админов и владельцев)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID карты
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Карта успешно удалена
+        '404':
+          description: Карта не найдена
+        '403':
+          description: Нет доступа к карте
+
+  /api/cards/{id}/block:
+    put:
+      tags:
+        - Bank Cards
+      summary: Заблокировать карту
+      description: Блокирует банковскую карту
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID карты
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Причина блокировки
+                  example: "Подозрительная активность"
+      responses:
+        '200':
+          description: Карта успешно заблокирована
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankCardDto'
+        '404':
+          description: Карта не найдена
+        '403':
+          description: Нет доступа к карте
+
+  /api/cards/{id}/activate:
+    put:
+      tags:
+        - Bank Cards
+      summary: Активировать карту
+      description: Активирует заблокированную карту
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID карты
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Карта успешно активирована
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankCardDto'
+        '404':
+          description: Карта не найдена
+        '403':
+          description: Нет доступа к карте
+
+  /api/cards/{id}/topup:
+    put:
+      tags:
+        - Bank Cards
+      summary: Пополнить карту
+      description: Пополняет баланс карты на указанную сумму
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID карты
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: number
+                  format: double
+                  description: Сумма пополнения
+                  example: 1000.00
+      responses:
+        '200':
+          description: Карта успешно пополнена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BankCardDto'
+        '404':
+          description: Карта не найдена
+        '400':
+          description: Некорректная сумма
+        '403':
+          description: Нет доступа к карте
+
+  # Переводы
+  /api/transfers:
+    get:
+      tags:
+        - Transfers
+      summary: Получить историю переводов
+      description: Возвращает историю переводов пользователя
+      parameters:
+        - name: page
+          in: query
+          description: Номер страницы
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          description: Размер страницы
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: История переводов
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TransferResponse'
+                  totalElements:
+                    type: integer
+                  totalPages:
+                    type: integer
+        '401':
+          description: Не авторизован
+
+    post:
+      tags:
+        - Transfers
+      summary: Выполнить перевод
+      description: Выполняет перевод между картами пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransferRequest'
+      responses:
+        '200':
+          description: Перевод выполнен успешно
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransferResponse'
+        '400':
+          description: Некорректные данные или недостаточно средств
+        '404':
+          description: Карта не найдена
+        '403':
+          description: Нет доступа к карте
+
+  /api/transfers/stats:
+    get:
+      tags:
+        - Transfers
+      summary: Получить статистику переводов
+      description: Возвращает статистику переводов пользователя
+      responses:
+        '200':
+          description: Статистика переводов
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransferStats'
+        '401':
+          description: Не авторизован
+
+  # Управление пользователями (только для админов)
+  /api/users:
+    get:
+      tags:
+        - Users
+      summary: Получить список пользователей
+      description: Возвращает список всех пользователей (только для админов)
+      security:
+        - BearerAuth: [ADMIN]
+      parameters:
+        - name: page
+          in: query
+          description: Номер страницы
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          description: Размер страницы
+          schema:
+            type: integer
+            default: 10
+        - name: search
+          in: query
+          description: Поиск по имени или email
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Список пользователей
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                  totalElements:
+                    type: integer
+                  totalPages:
+                    type: integer
+        '403':
+          description: Недостаточно прав
+
+    post:
+      tags:
+        - Users
+      summary: Создать пользователя
+      description: Создает нового пользователя (только для админов)
+      security:
+        - BearerAuth: [ADMIN]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '201':
+          description: Пользователь успешно создан
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Некорректные данные
+        '403':
+          description: Недостаточно прав
+
+  /api/users/{id}:
+    get:
+      tags:
+        - Users
+      summary: Получить пользователя по ID
+      description: Возвращает информацию о пользователе
+      security:
+        - BearerAuth: [ADMIN]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID пользователя
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Информация о пользователе
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: Пользователь не найден
+        '403':
+          description: Недостаточно прав
+
+    put:
+      tags:
+        - Users
+      summary: Обновить пользователя
+      description: Обновляет информацию о пользователе
+      security:
+        - BearerAuth: [ADMIN]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID пользователя
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/User'
+      responses:
+        '200':
+          description: Пользователь успешно обновлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: Пользователь не найден
+        '403':
+          description: Недостаточно прав
+
+    delete:
+      tags:
+        - Users
+      summary: Удалить пользователя
+      description: Удаляет пользователя
+      security:
+        - BearerAuth: [ADMIN]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID пользователя
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Пользователь успешно удален
+        '404':
+          description: Пользователь не найден
+        '403':
+          description: Недостаточно прав
+
+  # Уведомления
+  /api/notifications:
+    get:
+      tags:
+        - Notifications
+      summary: Получить уведомления
+      description: Возвращает уведомления для текущего пользователя
+      parameters:
+        - name: page
+          in: query
+          description: Номер страницы
+          schema:
+            type: integer
+            default: 0
+        - name: size
+          in: query
+          description: Размер страницы
+          schema:
+            type: integer
+            default: 10
+        - name: type
+          in: query
+          description: Фильтр по типу уведомления
+          schema:
+            $ref: '#/components/schemas/NotificationType'
+      responses:
+        '200':
+          description: Список уведомлений
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Notification'
+                  totalElements:
+                    type: integer
+                  totalPages:
+                    type: integer
+        '401':
+          description: Не авторизован
+
+  /api/notifications/{id}/mark-processed:
+    post:
+      tags:
+        - Notifications
+      summary: Отметить уведомление как обработанное
+      description: Отмечает уведомление как обработанное (только для админов)
+      security:
+        - BearerAuth: [ADMIN]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID уведомления
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Уведомление отмечено как обработанное
+        '404':
+          description: Уведомление не найдено
+        '403':
+          description: Недостаточно прав
+
+  # Экспорт данных (только для админов)
+  /admin/export/cards/csv:
+    get:
+      tags:
+        - Export
+      summary: Экспорт карт в CSV
+      description: Экспортирует данные о картах в CSV формате
+      security:
+        - BearerAuth: [ADMIN]
+      parameters:
+        - name: status
+          in: query
+          description: Фильтр по статусу карты
+          schema:
+            $ref: '#/components/schemas/CardStatus'
+        - name: search
+          in: query
+          description: Поиск по номеру карты или email
+          schema:
+            type: string
+        - name: ownerEmail
+          in: query
+          description: Email владельца карты
+          schema:
+            type: string
+      responses:
+        '200':
+          description: CSV файл с данными о картах
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        '403':
+          description: Недостаточно прав
+
+  /admin/export/cards/pdf:
+    get:
+      tags:
+        - Export
+      summary: Экспорт карт в PDF
+      description: Экспортирует данные о картах в PDF формате
+      security:
+        - BearerAuth: [ADMIN]
+      parameters:
+        - name: status
+          in: query
+          description: Фильтр по статусу карты
+          schema:
+            $ref: '#/components/schemas/CardStatus'
+        - name: search
+          in: query
+          description: Поиск по номеру карты или email
+          schema:
+            type: string
+        - name: ownerEmail
+          in: query
+          description: Email владельца карты
+          schema:
+            type: string
+      responses:
+        '200':
+          description: PDF файл с данными о картах
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '403':
+          description: Недостаточно прав
+
+  /admin/export/users/csv:
+    get:
+      tags:
+        - Export
+      summary: Экспорт пользователей в CSV
+      description: Экспортирует данные о пользователях в CSV формате
+      security:
+        - BearerAuth: [ADMIN]
+      parameters:
+        - name: role
+          in: query
+          description: Фильтр по роли пользователя
+          schema:
+            $ref: '#/components/schemas/UserRole'
+        - name: search
+          in: query
+          description: Поиск по имени или email
+          schema:
+            type: string
+      responses:
+        '200':
+          description: CSV файл с данными о пользователях
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        '403':
+          description: Недостаточно прав
+
+  /admin/export/users/pdf:
+    get:
+      tags:
+        - Export
+      summary: Экспорт пользователей в PDF
+      description: Экспортирует данные о пользователях в PDF формате
+      security:
+        - BearerAuth: [ADMIN]
+      parameters:
+        - name: role
+          in: query
+          description: Фильтр по роли пользователя
+          schema:
+            $ref: '#/components/schemas/UserRole'
+        - name: search
+          in: query
+          description: Поиск по имени или email
+          schema:
+            type: string
+      responses:
+        '200':
+          description: PDF файл с данными о пользователях
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '403':
+          description: Недостаточно прав
+
+  /admin/export/audit/csv:
+    get:
+      tags:
+        - Export
+      summary: Экспорт аудит-логов в CSV
+      description: Экспортирует аудит-логи в CSV формате
+      security:
+        - BearerAuth: [ADMIN]
+      parameters:
+        - name: action
+          in: query
+          description: Фильтр по действию
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Фильтр по статусу
+          schema:
+            type: string
+        - name: userEmail
+          in: query
+          description: Email пользователя
+          schema:
+            type: string
+      responses:
+        '200':
+          description: CSV файл с аудит-логами
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+        '403':
+          description: Недостаточно прав
+
+  /admin/export/audit/pdf:
+    get:
+      tags:
+        - Export
+      summary: Экспорт аудит-логов в PDF
+      description: Экспортирует аудит-логи в PDF формате
+      security:
+        - BearerAuth: [ADMIN]
+      parameters:
+        - name: action
+          in: query
+          description: Фильтр по действию
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: Фильтр по статусу
+          schema:
+            type: string
+        - name: userEmail
+          in: query
+          description: Email пользователя
+          schema:
+            type: string
+      responses:
+        '200':
+          description: PDF файл с аудит-логами
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '403':
+          description: Недостаточно прав
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # Основные модели
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Уникальный идентификатор пользователя
+        email:
+          type: string
+          format: email
+          description: Email пользователя
+        firstName:
+          type: string
+          description: Имя пользователя
+        lastName:
+          type: string
+          description: Фамилия пользователя
+        role:
+          $ref: '#/components/schemas/UserRole'
+        dateOfBirth:
+          type: string
+          format: date
+          description: Дата рождения
+        country:
+          type: string
+          description: Страна
+        gender:
+          type: string
+          enum: [Male, Female]
+          description: Пол
+        createdAt:
+          type: string
+          format: date-time
+          description: Дата создания аккаунта
+        updatedAt:
+          type: string
+          format: date-time
+          description: Дата последнего обновления
+      required:
+        - email
+        - firstName
+        - lastName
+        - role
+
+    BankCard:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Уникальный идентификатор карты
+        maskedNumber:
+          type: string
+          description: Маскированный номер карты
+        balance:
+          type: number
+          format: double
+          description: Баланс карты
+        status:
+          $ref: '#/components/schemas/CardStatus'
+        expiryDate:
+          type: string
+          format: date
+          description: Дата истечения карты
+        createdAt:
+          type: string
+          format: date-time
+          description: Дата создания карты
+        owner:
+          $ref: '#/components/schemas/User'
+      required:
+        - maskedNumber
+        - balance
+        - status
+        - expiryDate
+
+    Transfer:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Уникальный идентификатор перевода
+        fromCard:
+          $ref: '#/components/schemas/BankCard'
+        toCard:
+          $ref: '#/components/schemas/BankCard'
+        amount:
+          type: number
+          format: double
+          description: Сумма перевода
+        description:
+          type: string
+          description: Описание перевода
+        status:
+          $ref: '#/components/schemas/TransferStatus'
+        createdAt:
+          type: string
+          format: date-time
+          description: Дата создания перевода
+        processedAt:
+          type: string
+          format: date-time
+          description: Дата обработки перевода
+        errorMessage:
+          type: string
+          description: Сообщение об ошибке
+      required:
+        - amount
+        - description
+        - status
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Уникальный идентификатор уведомления
+        type:
+          $ref: '#/components/schemas/NotificationType'
+        title:
+          type: string
+          description: Заголовок уведомления
+        message:
+          type: string
+          description: Текст уведомления
+        isRead:
+          type: boolean
+          description: Прочитано ли уведомление
+        isProcessed:
+          type: boolean
+          description: Обработано ли уведомление
+        createdAt:
+          type: string
+          format: date-time
+          description: Дата создания уведомления
+        readAt:
+          type: string
+          format: date-time
+          description: Дата прочтения уведомления
+        processedAt:
+          type: string
+          format: date-time
+          description: Дата обработки уведомления
+        user:
+          $ref: '#/components/schemas/User'
+        card:
+          $ref: '#/components/schemas/BankCard'
+        amount:
+          type: number
+          format: double
+          description: Сумма (для уведомлений о пополнении)
+        newExpiryDate:
+          type: string
+          description: Новая дата истечения (для запросов на пересоздание)
+      required:
+        - type
+        - title
+        - message
+        - isRead
+        - isProcessed
+
+    # DTO модели
+    BankCardDto:
+      type: object
+      properties:
+        id:
+          type: integer
+        maskedNumber:
+          type: string
+        balance:
+          type: number
+          format: double
+        status:
+          $ref: '#/components/schemas/CardStatus'
+        expiryDate:
+          type: string
+          format: date
+        createdAt:
+          type: string
+          format: date-time
+        ownerName:
+          type: string
+          description: Имя владельца карты
+        ownerEmail:
+          type: string
+          description: Email владельца карты
+
+    CreateBankCardRequest:
+      type: object
+      properties:
+        ownerEmail:
+          type: string
+          format: email
+          description: Email владельца карты
+        expiryDate:
+          type: string
+          format: date
+          description: Дата истечения карты
+      required:
+        - ownerEmail
+        - expiryDate
+
+    TransferRequest:
+      type: object
+      properties:
+        fromCardId:
+          type: integer
+          description: ID карты отправителя
+        toCardId:
+          type: integer
+          description: ID карты получателя
+        amount:
+          type: number
+          format: double
+          description: Сумма перевода
+        description:
+          type: string
+          description: Описание перевода
+      required:
+        - fromCardId
+        - toCardId
+        - amount
+        - description
+
+    TransferResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        fromCardId:
+          type: integer
+        fromCardMasked:
+          type: string
+        toCardId:
+          type: integer
+        toCardMasked:
+          type: string
+        amount:
+          type: number
+          format: double
+        description:
+          type: string
+        status:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        errorMessage:
+          type: string
+
+    TransferStats:
+      type: object
+      properties:
+        totalTransfers:
+          type: integer
+          description: Общее количество переводов
+        totalAmount:
+          type: number
+          format: double
+          description: Общая сумма переводов
+        averageAmount:
+          type: number
+          format: double
+          description: Средняя сумма перевода
+        lastTransferDate:
+          type: string
+          format: date-time
+          description: Дата последнего перевода
+
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email пользователя
+        password:
+          type: string
+          format: password
+          description: Пароль пользователя
+      required:
+        - email
+        - password
+
+    RegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          description: Email пользователя
+        password:
+          type: string
+          format: password
+          description: Пароль пользователя
+        firstName:
+          type: string
+          description: Имя пользователя
+        lastName:
+          type: string
+          description: Фамилия пользователя
+        dateOfBirth:
+          type: string
+          format: date
+          description: Дата рождения
+        country:
+          type: string
+          description: Страна
+        gender:
+          type: string
+          enum: [Male, Female]
+          description: Пол
+      required:
+        - email
+        - password
+        - firstName
+        - lastName
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT токен
+        user:
+          $ref: '#/components/schemas/User'
+        expiresIn:
+          type: integer
+          description: Время жизни токена в секундах
+
+    # Перечисления
+    UserRole:
+      type: string
+      enum:
+        - ADMIN
+        - USER
+      description: Роль пользователя в системе
+
+    CardStatus:
+      type: string
+      enum:
+        - ACTIVE
+        - BLOCKED
+        - EXPIRED
+      description: Статус банковской карты
+
+    TransferStatus:
+      type: string
+      enum:
+        - PENDING
+        - COMPLETED
+        - FAILED
+      description: Статус перевода
+
+    NotificationType:
+      type: string
+      enum:
+        - CARD_BLOCK_REQUEST
+        - CARD_TOPUP_REQUEST
+        - CARD_UNBLOCK_REQUEST
+        - CARD_CREATE_REQUEST
+        - CARD_RECREATE_REQUEST
+        - CARD_ACTIVATED
+        - CARD_BLOCKED
+        - TRANSFER_COMPLETED
+      description: Тип уведомления
+
+    # Модели ошибок
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Сообщение об ошибке
+        errorCode:
+          type: string
+          description: Код ошибки
+        timestamp:
+          type: string
+          format: date-time
+          description: Время возникновения ошибки
+        path:
+          type: string
+          description: Путь запроса, вызвавшего ошибку
+
+    ValidationError:
+      type: object
+      properties:
+        field:
+          type: string
+          description: Поле с ошибкой
+        message:
+          type: string
+          description: Сообщение об ошибке валидации
+        rejectedValue:
+          type: string
+          description: Отклоненное значение
+
+tags:
+  - name: Authentication
+    description: Аутентификация и авторизация пользователей
+  - name: Bank Cards
+    description: Управление банковскими картами
+  - name: Transfers
+    description: Переводы между картами
+  - name: Users
+    description: Управление пользователями (только для админов)
+  - name: Notifications
+    description: Система уведомлений
+  - name: Export
+    description: Экспорт данных (только для админов)

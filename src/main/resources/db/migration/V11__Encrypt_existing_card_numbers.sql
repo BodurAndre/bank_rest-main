@@ -20,3 +20,4 @@ WHERE card_number NOT LIKE 'ENC_%';
 UPDATE bank_cards 
 SET masked_number = '**** **** **** ****'
 WHERE masked_number NOT LIKE '**** **** **** %';
+
